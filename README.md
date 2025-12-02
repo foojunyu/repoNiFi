@@ -4,7 +4,19 @@
 
 ## Overview
 
-A comprehensive monitoring solution for Apache NiFi 1.23.2 that provides real-time performance visualization in Kibana using Elasticsearch Cloud. This solution enables you to monitor processor performance, system health, detect anomalies, and receive alerts for critical conditions.
+A comprehensive monitoring solution for Apache NiFi 1.23.2 that provides real-time performance visualization in Kibana using Elasticsearch Cloud. 
+
+**This solution uses NiFi's built-in ReportingTask mechanism**, which is the recommended approach for metrics collection as it runs natively within NiFi with direct access to internal metrics, minimal overhead, and comprehensive data collection.
+
+## Why ReportingTask?
+
+| Aspect | ReportingTask (This Solution) | API-based Flows |
+|--------|-------------------------------|-----------------|
+| **Performance** | Native, minimal overhead | HTTP overhead, consumes flow resources |
+| **Access** | Direct internal metrics access | Limited to REST API endpoints |
+| **Reliability** | Built-in, maintained by NiFi | Custom flows require maintenance |
+| **Configuration** | Simple UI configuration | Complex flow design |
+| **Metrics Depth** | Full provenance, bulletins, status | Subset available via API |
 
 ## Features
 
@@ -27,45 +39,46 @@ A comprehensive monitoring solution for Apache NiFi 1.23.2 that provides real-ti
 | Heap Usage Warning | Heap utilization exceeds 85% | Warning |
 | Disk Usage Critical | Any repository exceeds 90% usage | Critical |
 
-### 📈 Metrics Collected
+### 📈 Metrics Collected via ReportingTasks
 
-**System Health:**
+**SiteToSiteMetricsReportingTask (System Health):**
 - Heap usage (used, max, percentage)
 - CPU load average
 - Thread count (active, daemon, total)
 - Garbage collection time and count
 - System uptime
+- Repository storage utilization
 
-**Processor Performance:**
+**SiteToSiteStatusReportingTask (Processor Performance):**
 - FlowFiles in/out per processor
 - Bytes read/written
 - Processing time
-- Error count and trends
+- Queue depths and back pressure
 - Transaction rates
 
-**Repository Storage:**
-- FlowFile repository disk usage
-- Content repository disk usage
-- Provenance repository disk usage
-- Usage trends over time
+**SiteToSiteBulletinReportingTask (Errors & Warnings):**
+- Error bulletins with source component
+- Warning messages
+- Bulletin timestamps and details
+
+**ElasticsearchProvenanceReporter (Optional - Data Lineage):**
+- Provenance events
+- Data flow tracking
+- FlowFile lifecycle
 
 ## Project Structure
 
 ```
 ├── docs/
-│   └── IMPLEMENTATION_GUIDE.md    # Detailed implementation guide
+│   ├── IMPLEMENTATION_GUIDE.md         # Main implementation guide
+│   └── REPORTINGTASK_CONFIGURATION.md  # Detailed ReportingTask setup
 ├── elasticsearch/
-│   └── index-templates/           # Elasticsearch index templates
-│       ├── nifi-system-metrics-template.json
-│       ├── nifi-processor-metrics-template.json
-│       ├── nifi-storage-metrics-template.json
-│       ├── nifi-connection-metrics-template.json
-│       └── nifi-metrics-ilm-policy.json
-├── nifi-flows/
-│   ├── SystemMetricsCollector.json      # System health metrics
-│   ├── ProcessorMetricsCollector.json   # Per-processor metrics
-│   ├── StorageMetricsCollector.json     # Repository storage metrics
-│   └── ConnectionMetricsCollector.json  # Queue/connection metrics
+│   └── index-templates/                 # Elasticsearch index templates
+│       ├── nifi-status-template.json    # For SiteToSiteStatusReportingTask
+│       ├── nifi-metrics-template.json   # For SiteToSiteMetricsReportingTask
+│       ├── nifi-bulletins-template.json # For SiteToSiteBulletinReportingTask
+│       ├── nifi-provenance-template.json # For ElasticsearchProvenanceReporter
+│       └── nifi-metrics-ilm-policy.json # Index lifecycle management
 ├── kibana/
 │   ├── dashboards/
 │   │   └── nifi-monitoring-dashboards.ndjson
@@ -75,9 +88,10 @@ A comprehensive monitoring solution for Apache NiFi 1.23.2 that provides real-ti
 │       ├── high-transaction-error-alert.json
 │       ├── heap-usage-warning-alert.json
 │       └── disk-usage-critical-alert.json
+├── nifi-flows/                          # Legacy API-based flows (optional)
 ├── scripts/
-│   └── setup.sh                   # Automated setup script
-└── MonitoringHeartbeat.json       # Original heartbeat monitoring flow
+│   └── setup.sh                         # Automated setup script
+└── MonitoringHeartbeat.json             # Original heartbeat monitoring flow
 ```
 
 ## Quick Start
@@ -90,78 +104,65 @@ A comprehensive monitoring solution for Apache NiFi 1.23.2 that provides real-ti
 
 ### Installation
 
-1. **Run the setup script:**
+1. **Deploy Elasticsearch Index Templates:**
    ```bash
    chmod +x scripts/setup.sh
    ./scripts/setup.sh
    ```
 
-2. **Import NiFi flows:**
-   - Open NiFi UI
-   - Right-click canvas → Upload Template
-   - Upload flows from `nifi-flows/`
-   - Configure Elasticsearch connection in each flow
+2. **Configure NiFi ReportingTasks:**
+   - Open NiFi UI → Controller Settings (hamburger menu)
+   - Go to **Reporting Tasks** tab
+   - Add and configure:
+     - `SiteToSiteStatusReportingTask` (30 sec schedule)
+     - `SiteToSiteMetricsReportingTask` (30 sec schedule)
+     - `SiteToSiteBulletinReportingTask` (1 min schedule)
+     - `ElasticsearchProvenanceReporter` (optional, 5 min schedule)
+   - See [REPORTINGTASK_CONFIGURATION.md](docs/REPORTINGTASK_CONFIGURATION.md) for details
 
-3. **Configure and start flows:**
-   - Set `nifi.api.url` variable to your NiFi API endpoint
-   - Configure Elasticsearch credentials in PutElasticsearch processors
-   - Start the monitoring flows
+3. **Start ReportingTasks:**
+   - Click the play button (▶) for each ReportingTask
+   - Verify status shows "Running"
 
-4. **View dashboards:**
-   - Open Kibana
-   - Navigate to Dashboard
-   - Select the imported NiFi monitoring dashboards
+4. **Import Kibana Dashboards:**
+   - Open Kibana → Stack Management → Saved Objects
+   - Import `kibana/dashboards/nifi-monitoring-dashboards.ndjson`
 
 ## Timeline & Effort Estimate
 
 | Phase | Description | Duration |
 |-------|-------------|----------|
-| Setup | Configure Elasticsearch and NiFi API access | 2-3 hours |
-| Data Collection | Deploy and configure NiFi monitoring flows | 4-6 hours |
+| Setup | Configure Elasticsearch templates | 2-3 hours |
+| ReportingTask | Configure and enable ReportingTasks | 2-3 hours |
 | Dashboards | Import and customize Kibana dashboards | 4-6 hours |
 | Alerting | Configure alert rules and actions | 2-4 hours |
-| Testing | Validate metrics collection and alerts | 2-3 hours |
-| Documentation | Create runbooks and training materials | 2 hours |
-| **Total** | | **16-24 hours** |
+| Testing | Validate metrics collection and alerts | 1-2 hours |
+| **Total** | | **12-18 hours** |
 
 ## Configuration
 
-### NiFi API Access
+### ReportingTask Setup
 
-Set the `nifi.api.url` variable in each flow:
-```
-http://your-nifi-host:8080
-```
+Configure each ReportingTask in NiFi Controller Settings:
 
-For secured NiFi, configure SSL Context Service and authentication.
+| ReportingTask | Schedule | Metrics |
+|---------------|----------|---------|
+| SiteToSiteStatusReportingTask | 30 sec | Processor status, queues, throughput |
+| SiteToSiteMetricsReportingTask | 30 sec | JVM heap, CPU, threads, GC, uptime |
+| SiteToSiteBulletinReportingTask | 1 min | Errors, warnings |
+| ElasticsearchProvenanceReporter | 5 min | Data lineage (optional) |
 
 ### Elasticsearch Connection
 
-Configure the PutElasticsearchJson processors with:
-- Elasticsearch URL
+Configure in each ReportingTask:
+- Elasticsearch URL: `https://your-deployment.es.cloud.es.io:9243`
 - Username/Password or API Key
 - SSL Context Service (for HTTPS)
 
-## Performance Optimization Tips
-
-1. **NiFi Flow Optimization:**
-   - Use appropriate batch sizes
-   - Configure back pressure thresholds
-   - Optimize thread pool sizing
-
-2. **Elasticsearch Optimization:**
-   - Use ILM for index lifecycle management
-   - Configure appropriate shard sizes
-   - Set refresh interval to 30s for metrics
-
-3. **Dashboard Optimization:**
-   - Use relative time ranges
-   - Enable query caching
-   - Limit aggregation cardinality
-
 ## Documentation
 
-For detailed implementation instructions, see [docs/IMPLEMENTATION_GUIDE.md](docs/IMPLEMENTATION_GUIDE.md).
+- **[Implementation Guide](docs/IMPLEMENTATION_GUIDE.md)** - Complete setup instructions
+- **[ReportingTask Configuration](docs/REPORTINGTASK_CONFIGURATION.md)** - Detailed ReportingTask setup
 
 ## License
 

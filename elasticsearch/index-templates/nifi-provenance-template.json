@@ -1,0 +1,133 @@
+{
+  "index_patterns": ["nifi-provenance-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 1,
+      "index.refresh_interval": "60s",
+      "index.lifecycle.name": "nifi-metrics-ilm-policy",
+      "index.lifecycle.rollover_alias": "nifi-provenance"
+    },
+    "mappings": {
+      "properties": {
+        "@timestamp": {
+          "type": "date"
+        },
+        "eventId": {
+          "type": "keyword"
+        },
+        "eventType": {
+          "type": "keyword"
+        },
+        "eventTime": {
+          "type": "date"
+        },
+        "eventDuration": {
+          "type": "long"
+        },
+        "lineageStart": {
+          "type": "date"
+        },
+        "componentId": {
+          "type": "keyword"
+        },
+        "componentName": {
+          "type": "keyword"
+        },
+        "componentType": {
+          "type": "keyword"
+        },
+        "processGroupId": {
+          "type": "keyword"
+        },
+        "processGroupName": {
+          "type": "keyword"
+        },
+        "flowFileUuid": {
+          "type": "keyword"
+        },
+        "flowFileEntryDate": {
+          "type": "date"
+        },
+        "fileSize": {
+          "type": "long"
+        },
+        "previousFileSize": {
+          "type": "long"
+        },
+        "updatedAttributes": {
+          "type": "object",
+          "enabled": false
+        },
+        "previousAttributes": {
+          "type": "object",
+          "enabled": false
+        },
+        "actorHostname": {
+          "type": "keyword"
+        },
+        "contentClaimContainer": {
+          "type": "keyword"
+        },
+        "contentClaimSection": {
+          "type": "keyword"
+        },
+        "contentClaimIdentifier": {
+          "type": "keyword"
+        },
+        "contentClaimOffset": {
+          "type": "long"
+        },
+        "contentClaimSize": {
+          "type": "long"
+        },
+        "previousContentClaimContainer": {
+          "type": "keyword"
+        },
+        "previousContentClaimSection": {
+          "type": "keyword"
+        },
+        "previousContentClaimIdentifier": {
+          "type": "keyword"
+        },
+        "previousContentClaimOffset": {
+          "type": "long"
+        },
+        "previousContentClaimSize": {
+          "type": "long"
+        },
+        "sourceSystemFlowFileIdentifier": {
+          "type": "keyword"
+        },
+        "parentUuids": {
+          "type": "keyword"
+        },
+        "childUuids": {
+          "type": "keyword"
+        },
+        "alternateIdentifierUri": {
+          "type": "keyword"
+        },
+        "transitUri": {
+          "type": "keyword"
+        },
+        "relationship": {
+          "type": "keyword"
+        },
+        "details": {
+          "type": "text"
+        },
+        "sourceQueueIdentifier": {
+          "type": "keyword"
+        }
+      }
+    }
+  },
+  "priority": 100,
+  "composed_of": [],
+  "version": 1,
+  "_meta": {
+    "description": "Index template for NiFi provenance events from ElasticsearchProvenanceReporter",
+    "created_by": "NiFi ReportingTask Monitoring Solution"
+  }
+}

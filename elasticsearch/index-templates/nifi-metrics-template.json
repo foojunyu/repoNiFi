@@ -1,0 +1,81 @@
+{
+  "index_patterns": ["nifi-metrics-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 1,
+      "index.refresh_interval": "30s",
+      "index.lifecycle.name": "nifi-metrics-ilm-policy",
+      "index.lifecycle.rollover_alias": "nifi-metrics"
+    },
+    "mappings": {
+      "properties": {
+        "@timestamp": {
+          "type": "date"
+        },
+        "application": {
+          "type": "keyword"
+        },
+        "hostname": {
+          "type": "keyword"
+        },
+        "instanceId": {
+          "type": "keyword"
+        },
+        "jvm.uptime": { "type": "long" },
+        "jvm.heap.used": { "type": "long" },
+        "jvm.heap.usage": { "type": "float" },
+        "jvm.heap.max": { "type": "long" },
+        "jvm.heap.committed": { "type": "long" },
+        "jvm.heap.init": { "type": "long" },
+        "jvm.non_heap.used": { "type": "long" },
+        "jvm.non_heap.usage": { "type": "float" },
+        "jvm.non_heap.max": { "type": "long" },
+        "jvm.non_heap.committed": { "type": "long" },
+        "jvm.non_heap.init": { "type": "long" },
+        "jvm.thread.count": { "type": "integer" },
+        "jvm.thread.daemon.count": { "type": "integer" },
+        "jvm.thread.blocked.count": { "type": "integer" },
+        "jvm.thread.runnable.count": { "type": "integer" },
+        "jvm.thread.timed_waiting.count": { "type": "integer" },
+        "jvm.thread.waiting.count": { "type": "integer" },
+        "jvm.gc.runs": { "type": "long" },
+        "jvm.gc.time": { "type": "long" },
+        "jvm.file.descriptor.usage": { "type": "float" },
+        "processor.loadAverage": { "type": "float" },
+        "processor.availableProcessors": { "type": "integer" },
+        "flowFileRepositoryStorageUsage.freeSpace": { "type": "long" },
+        "flowFileRepositoryStorageUsage.totalSpace": { "type": "long" },
+        "flowFileRepositoryStorageUsage.usedSpace": { "type": "long" },
+        "flowFileRepositoryStorageUsage.utilization": { "type": "float" },
+        "contentRepositoryStorageUsage": {
+          "type": "nested",
+          "properties": {
+            "identifier": { "type": "keyword" },
+            "freeSpace": { "type": "long" },
+            "totalSpace": { "type": "long" },
+            "usedSpace": { "type": "long" },
+            "utilization": { "type": "float" }
+          }
+        },
+        "provenanceRepositoryStorageUsage": {
+          "type": "nested",
+          "properties": {
+            "identifier": { "type": "keyword" },
+            "freeSpace": { "type": "long" },
+            "totalSpace": { "type": "long" },
+            "usedSpace": { "type": "long" },
+            "utilization": { "type": "float" }
+          }
+        }
+      }
+    }
+  },
+  "priority": 100,
+  "composed_of": [],
+  "version": 1,
+  "_meta": {
+    "description": "Index template for NiFi JVM/system metrics from SiteToSiteMetricsReportingTask",
+    "created_by": "NiFi ReportingTask Monitoring Solution"
+  }
+}

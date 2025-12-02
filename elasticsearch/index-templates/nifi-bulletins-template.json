@@ -1,0 +1,77 @@
+{
+  "index_patterns": ["nifi-bulletins-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 1,
+      "index.refresh_interval": "30s",
+      "index.lifecycle.name": "nifi-metrics-ilm-policy",
+      "index.lifecycle.rollover_alias": "nifi-bulletins"
+    },
+    "mappings": {
+      "properties": {
+        "@timestamp": {
+          "type": "date"
+        },
+        "platform": {
+          "type": "keyword"
+        },
+        "bulletinId": {
+          "type": "keyword"
+        },
+        "bulletinCategory": {
+          "type": "keyword"
+        },
+        "bulletinGroupId": {
+          "type": "keyword"
+        },
+        "bulletinGroupName": {
+          "type": "keyword"
+        },
+        "bulletinGroupPath": {
+          "type": "keyword"
+        },
+        "bulletinLevel": {
+          "type": "keyword"
+        },
+        "bulletinMessage": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 1024
+            }
+          }
+        },
+        "bulletinNodeAddress": {
+          "type": "keyword"
+        },
+        "bulletinNodeId": {
+          "type": "keyword"
+        },
+        "bulletinSourceId": {
+          "type": "keyword"
+        },
+        "bulletinSourceName": {
+          "type": "keyword"
+        },
+        "bulletinSourceType": {
+          "type": "keyword"
+        },
+        "bulletinTimestamp": {
+          "type": "date"
+        },
+        "bulletinFlowFileUuid": {
+          "type": "keyword"
+        }
+      }
+    }
+  },
+  "priority": 100,
+  "composed_of": [],
+  "version": 1,
+  "_meta": {
+    "description": "Index template for NiFi bulletins (errors/warnings) from SiteToSiteBulletinReportingTask",
+    "created_by": "NiFi ReportingTask Monitoring Solution"
+  }
+}

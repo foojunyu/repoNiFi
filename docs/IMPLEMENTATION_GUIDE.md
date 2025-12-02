@@ -4,45 +4,48 @@
 
 This comprehensive solution enables real-time visualization of Apache NiFi 1.23.2 performance metrics in Kibana, providing deep insights into processor behavior, system health, storage usage, and automated alerting for critical conditions.
 
+**This solution uses NiFi's built-in ReportingTask mechanism**, which is the recommended approach for metrics collection as it runs natively within NiFi, has direct access to internal metrics, and requires no external API calls.
+
 ## Table of Contents
 
 1. [Project Timeline](#project-timeline)
 2. [Architecture Overview](#architecture-overview)
-3. [Requirements](#requirements)
-4. [Installation Guide](#installation-guide)
-5. [Monitoring Dashboards](#monitoring-dashboards)
-6. [Alerting Configuration](#alerting-configuration)
-7. [Performance Optimization](#performance-optimization)
-8. [Troubleshooting](#troubleshooting)
+3. [Why ReportingTask?](#why-reportingtask)
+4. [Requirements](#requirements)
+5. [Installation Guide](#installation-guide)
+6. [ReportingTask Configuration](#reportingtask-configuration)
+7. [Monitoring Dashboards](#monitoring-dashboards)
+8. [Alerting Configuration](#alerting-configuration)
+9. [Performance Optimization](#performance-optimization)
+10. [Troubleshooting](#troubleshooting)
 
 ---
 
 ## Project Timeline
 
-### Total Estimated Time: 16-24 Hours
+### Total Estimated Time: 12-18 Hours
 
 | Phase | Tasks | Duration | Status |
 |-------|-------|----------|--------|
-| **Phase 1: Setup** | Configure Elasticsearch indices, NiFi API access | 2-3 hours | Ready |
-| **Phase 2: Data Collection** | Deploy NiFi monitoring flows | 4-6 hours | Ready |
+| **Phase 1: Setup** | Configure Elasticsearch indices, Controller Services | 2-3 hours | Ready |
+| **Phase 2: ReportingTask** | Configure and enable ReportingTasks | 2-3 hours | Ready |
 | **Phase 3: Dashboards** | Create Kibana visualizations and dashboards | 4-6 hours | Ready |
 | **Phase 4: Alerting** | Configure alert rules in Kibana | 2-4 hours | Ready |
-| **Phase 5: Testing** | Validate metrics collection and alerts | 2-3 hours | - |
-| **Phase 6: Documentation** | Create runbooks and training materials | 2-2 hours | Ready |
+| **Phase 5: Testing** | Validate metrics collection and alerts | 1-2 hours | - |
 
 ### Detailed Breakdown
 
 #### Phase 1: Setup (2-3 hours)
 - [ ] Configure Elasticsearch Cloud connection settings
 - [ ] Create index templates for metrics data
-- [ ] Set up NiFi API credentials for metrics collection
+- [ ] Create ElasticSearchClientService controller service in NiFi
 - [ ] Verify network connectivity between NiFi and Elasticsearch
 
-#### Phase 2: Data Collection (4-6 hours)
-- [ ] Import NiFi System Metrics Collector flow
-- [ ] Import NiFi Processor Metrics Collector flow
-- [ ] Import NiFi Repository Storage Monitor flow
-- [ ] Configure scheduling intervals
+#### Phase 2: ReportingTask Configuration (2-3 hours)
+- [ ] Configure ElasticsearchProvenanceReporter
+- [ ] Configure SiteToSiteBulletinReportingTask
+- [ ] Configure SiteToSiteStatusReportingTask
+- [ ] Configure SiteToSiteMetricsReportingTask
 - [ ] Test data ingestion to Elasticsearch
 
 #### Phase 3: Dashboards (4-6 hours)
@@ -57,16 +60,37 @@ This comprehensive solution enables real-time visualization of Apache NiFi 1.23.
 - [ ] Configure high transaction error alerts
 - [ ] Set up alert actions (email, webhook, etc.)
 
-#### Phase 5: Testing (2-3 hours)
+#### Phase 5: Testing (1-2 hours)
 - [ ] Validate all metrics are being collected
 - [ ] Test alert triggers
 - [ ] Performance test under load
 - [ ] Document baseline metrics
 
-#### Phase 6: Documentation (2 hours)
-- [ ] Create operational runbook
-- [ ] Document alert response procedures
-- [ ] Training materials for operations team
+---
+
+## Why ReportingTask?
+
+ReportingTask is the **recommended approach** for NiFi metrics collection because:
+
+| Aspect | ReportingTask | API-based Flows |
+|--------|---------------|-----------------|
+| **Performance** | Native, minimal overhead | HTTP overhead, consumes flow resources |
+| **Access** | Direct internal metrics access | Limited to REST API endpoints |
+| **Reliability** | Built-in, maintained by NiFi | Custom flows require maintenance |
+| **Configuration** | Simple UI configuration | Complex flow design |
+| **Metrics Depth** | Full provenance, bulletins, status | Subset available via API |
+| **Cluster Support** | Automatic cluster-aware | Manual cluster handling |
+
+### Available ReportingTasks in NiFi 1.23.2
+
+| ReportingTask | Metrics Collected |
+|---------------|-------------------|
+| **SiteToSiteStatusReportingTask** | Processor status, connection queues, throughput |
+| **SiteToSiteMetricsReportingTask** | JVM metrics, system metrics (heap, CPU, threads, GC) |
+| **SiteToSiteBulletinReportingTask** | Errors, warnings, bulletins |
+| **ElasticsearchProvenanceReporter** | Provenance events, data lineage |
+| **AmbariReportingTask** | Ambari-compatible metrics |
+| **PrometheusReportingTask** | Prometheus-format metrics |
 
 ---
 
@@ -75,32 +99,52 @@ This comprehensive solution enables real-time visualization of Apache NiFi 1.23.
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                        Apache NiFi 1.23.2                       │
+│                                                                  │
 │  ┌──────────────────────────────────────────────────────────┐   │
-│  │  System Metrics Collection Flow                          │   │
-│  │  • InvokeHTTP (NiFi API) → JoltTransformJSON →          │   │
-│  │    PutElasticsearch                                       │   │
+│  │                   Controller Services                      │   │
+│  │  • ElasticSearchClientService (connection to ES Cloud)    │   │
 │  └──────────────────────────────────────────────────────────┘   │
+│                                                                  │
 │  ┌──────────────────────────────────────────────────────────┐   │
-│  │  Processor Metrics Collection Flow                        │   │
-│  │  • InvokeHTTP (NiFi API) → SplitJSON →                   │   │
-│  │    JoltTransformJSON → PutElasticsearch                   │   │
+│  │                    ReportingTasks                          │   │
+│  │                                                            │   │
+│  │  ┌─────────────────────────────────────────────────────┐  │   │
+│  │  │  SiteToSiteStatusReportingTask                      │  │   │
+│  │  │  → Processor stats, queue depths, throughput        │  │   │
+│  │  │  → Schedule: 30 seconds                             │  │   │
+│  │  └─────────────────────────────────────────────────────┘  │   │
+│  │                                                            │   │
+│  │  ┌─────────────────────────────────────────────────────┐  │   │
+│  │  │  SiteToSiteMetricsReportingTask                     │  │   │
+│  │  │  → JVM heap, CPU, threads, GC, uptime               │  │   │
+│  │  │  → Schedule: 30 seconds                             │  │   │
+│  │  └─────────────────────────────────────────────────────┘  │   │
+│  │                                                            │   │
+│  │  ┌─────────────────────────────────────────────────────┐  │   │
+│  │  │  SiteToSiteBulletinReportingTask                    │  │   │
+│  │  │  → Errors, warnings, processor issues               │  │   │
+│  │  │  → Schedule: 1 minute                               │  │   │
+│  │  └─────────────────────────────────────────────────────┘  │   │
+│  │                                                            │   │
+│  │  ┌─────────────────────────────────────────────────────┐  │   │
+│  │  │  ElasticsearchProvenanceReporter (Optional)         │  │   │
+│  │  │  → Data lineage, provenance events                  │  │   │
+│  │  │  → Schedule: 5 minutes                              │  │   │
+│  │  └─────────────────────────────────────────────────────┘  │   │
+│  │                                                            │   │
 │  └──────────────────────────────────────────────────────────┘   │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  Storage Metrics Collection Flow                          │   │
-│  │  • InvokeHTTP (NiFi API) → JoltTransformJSON →          │   │
-│  │    PutElasticsearch                                       │   │
-│  └──────────────────────────────────────────────────────────┘   │
+│                                                                  │
 └────────────────────────────┬────────────────────────────────────┘
-                             │
+                             │ Direct push to Elasticsearch
                              ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Elasticsearch Cloud                          │
 │  ┌─────────────────────────────────────────────────────────────┐│
 │  │  Indices:                                                    ││
-│  │  • nifi-system-metrics-*     (heap, CPU, threads, GC)       ││
-│  │  • nifi-processor-metrics-*  (errors, transactions)         ││
-│  │  • nifi-storage-metrics-*    (flowfile, content, provenance)││
-│  │  • nifi-connection-metrics-* (queue sizes, backpressure)    ││
+│  │  • nifi-status-*         (processor status, queues, bytes)  ││
+│  │  • nifi-metrics-*        (heap, CPU, threads, GC, uptime)   ││
+│  │  • nifi-bulletins-*      (errors, warnings)                 ││
+│  │  • nifi-provenance-*     (data lineage - optional)          ││
 │  └─────────────────────────────────────────────────────────────┘│
 └────────────────────────────┬────────────────────────────────────┘
                              │
@@ -138,17 +182,13 @@ This comprehensive solution enables real-time visualization of Apache NiFi 1.23.
 | Elasticsearch | 7.x / 8.x | Metrics storage |
 | Kibana | 7.x / 8.x | Visualization |
 
-### NiFi API Access
+### NiFi ReportingTask Requirements
 
-The monitoring solution uses NiFi's REST API to collect metrics. Ensure:
+The monitoring solution uses NiFi's built-in ReportingTasks. Ensure:
 
-1. NiFi API is accessible from the monitoring flows
-2. Authentication is configured (if using secured NiFi)
-3. The following API endpoints are accessible:
-   - `/nifi-api/system-diagnostics`
-   - `/nifi-api/flow/process-groups/{id}`
-   - `/nifi-api/counters`
-   - `/nifi-api/controller/cluster` (if clustered)
+1. NiFi has network access to Elasticsearch Cloud
+2. SSL certificates are configured (for HTTPS connections)
+3. Elasticsearch user has write permissions to indices
 
 ### Elasticsearch Cloud Configuration
 
@@ -170,55 +210,147 @@ elasticsearch.api_key: "<your-api-key>"
 Upload the index templates from `elasticsearch/index-templates/`:
 
 ```bash
-# System metrics template
-curl -X PUT "https://your-es-cloud:9243/_index_template/nifi-system-metrics" \
+# Status metrics template (for SiteToSiteStatusReportingTask)
+curl -X PUT "https://your-es-cloud:9243/_index_template/nifi-status" \
   -H "Content-Type: application/json" \
   -u elastic:password \
-  -d @elasticsearch/index-templates/nifi-system-metrics-template.json
+  -d @elasticsearch/index-templates/nifi-status-template.json
 
-# Processor metrics template
-curl -X PUT "https://your-es-cloud:9243/_index_template/nifi-processor-metrics" \
+# System metrics template (for SiteToSiteMetricsReportingTask)
+curl -X PUT "https://your-es-cloud:9243/_index_template/nifi-metrics" \
   -H "Content-Type: application/json" \
   -u elastic:password \
-  -d @elasticsearch/index-templates/nifi-processor-metrics-template.json
+  -d @elasticsearch/index-templates/nifi-metrics-template.json
 
-# Storage metrics template
-curl -X PUT "https://your-es-cloud:9243/_index_template/nifi-storage-metrics" \
+# Bulletins template (for SiteToSiteBulletinReportingTask)
+curl -X PUT "https://your-es-cloud:9243/_index_template/nifi-bulletins" \
   -H "Content-Type: application/json" \
   -u elastic:password \
-  -d @elasticsearch/index-templates/nifi-storage-metrics-template.json
+  -d @elasticsearch/index-templates/nifi-bulletins-template.json
 
-# Connection metrics template
-curl -X PUT "https://your-es-cloud:9243/_index_template/nifi-connection-metrics" \
+# Provenance template (for ElasticsearchProvenanceReporter - optional)
+curl -X PUT "https://your-es-cloud:9243/_index_template/nifi-provenance" \
   -H "Content-Type: application/json" \
   -u elastic:password \
-  -d @elasticsearch/index-templates/nifi-connection-metrics-template.json
+  -d @elasticsearch/index-templates/nifi-provenance-template.json
 ```
 
-### Step 2: Import NiFi Monitoring Flows
+### Step 2: Configure Controller Services
 
 1. Open NiFi UI at `http://your-nifi-host:8080/nifi`
-2. Right-click on the canvas → Upload Template
-3. Upload flows from `nifi-flows/`:
-   - `SystemMetricsCollector.json`
-   - `ProcessorMetricsCollector.json`
-   - `StorageMetricsCollector.json`
-   - `ConnectionMetricsCollector.json`
-4. Configure each flow with your Elasticsearch connection details
-5. Start the flows
+2. Go to Controller Settings (hamburger menu → Controller Settings)
+3. Navigate to the **Reporting Task Controller Services** tab
+4. Add a new **ElasticSearchClientService** with settings:
 
-### Step 3: Import Kibana Dashboards
+| Property | Value |
+|----------|-------|
+| HTTP Hosts | `https://your-deployment.es.cloud.es.io:9243` |
+| Username | `elastic` |
+| Password | `<your-password>` |
+| SSL Context Service | (configure if using HTTPS) |
+
+5. Enable the controller service
+
+---
+
+## ReportingTask Configuration
+
+### Step 3: Configure ReportingTasks
+
+Navigate to Controller Settings → Reporting Tasks tab and add the following:
+
+#### 3.1 SiteToSiteStatusReportingTask
+
+Collects processor status, queue depths, and throughput metrics.
+
+| Property | Value | Description |
+|----------|-------|-------------|
+| Destination URL | `https://your-es:9243` | Elasticsearch endpoint |
+| Index | `nifi-status` | Index name |
+| Index Operation | `index` | Index operation |
+| Run Schedule | `30 sec` | Collection interval |
+| Platform | `nifi` | Platform identifier |
+| Instance URL | `http://localhost:8080` | NiFi instance URL |
+| Component Type Filter | (leave empty for all) | Filter components |
+| Component Name Filter | (leave empty for all) | Filter by name |
+
+**Metrics Collected:**
+- `bytesReceived`, `bytesSent`, `bytesRead`, `bytesWritten`
+- `flowFilesReceived`, `flowFilesSent`, `flowFilesQueued`
+- `queuedBytes`, `queuedCount`
+- `activeThreadCount`, `terminatedThreadCount`
+- Processor run status and health
+
+#### 3.2 SiteToSiteMetricsReportingTask
+
+Collects JVM and system-level metrics.
+
+| Property | Value | Description |
+|----------|-------|-------------|
+| Destination URL | `https://your-es:9243` | Elasticsearch endpoint |
+| Index | `nifi-metrics` | Index name |
+| Run Schedule | `30 sec` | Collection interval |
+| Application ID | `nifi` | Application identifier |
+| Hostname | `${hostname()}` | Node hostname |
+
+**Metrics Collected:**
+- `jvm.heap.used`, `jvm.heap.usage`, `jvm.heap.max`
+- `jvm.gc.runs`, `jvm.gc.time`
+- `jvm.thread.count`, `jvm.daemon.thread.count`
+- `jvm.uptime`
+- `jvm.file.descriptor.usage`
+- Repository storage metrics
+
+#### 3.3 SiteToSiteBulletinReportingTask
+
+Collects error bulletins and warnings.
+
+| Property | Value | Description |
+|----------|-------|-------------|
+| Destination URL | `https://your-es:9243` | Elasticsearch endpoint |
+| Index | `nifi-bulletins` | Index name |
+| Run Schedule | `1 min` | Collection interval |
+| Platform | `nifi` | Platform identifier |
+
+**Metrics Collected:**
+- Bulletin message, level (ERROR, WARNING, INFO)
+- Source component ID, name, type
+- Timestamp, node information
+
+#### 3.4 ElasticsearchProvenanceReporter (Optional)
+
+Collects data provenance events for lineage tracking.
+
+| Property | Value | Description |
+|----------|-------|-------------|
+| ElasticSearch Client Service | (select your ES service) | Connection service |
+| Index | `nifi-provenance` | Index name |
+| Run Schedule | `5 min` | Collection interval |
+
+**Metrics Collected:**
+- Event type (CREATE, RECEIVE, SEND, etc.)
+- Component details
+- FlowFile attributes and content claims
+- Relationship information
+
+### Step 4: Start ReportingTasks
+
+1. Select each ReportingTask
+2. Click the play button (▶) to start
+3. Verify status shows "Running"
+
+### Step 5: Import Kibana Dashboards
 
 1. Open Kibana at your Elasticsearch Cloud URL
 2. Go to Stack Management → Saved Objects
 3. Import `kibana/dashboards/nifi-monitoring-dashboards.ndjson`
 4. Create index patterns:
-   - `nifi-system-metrics-*`
-   - `nifi-processor-metrics-*`
-   - `nifi-storage-metrics-*`
-   - `nifi-connection-metrics-*`
+   - `nifi-status-*`
+   - `nifi-metrics-*`
+   - `nifi-bulletins-*`
+   - `nifi-provenance-*` (if using provenance)
 
-### Step 4: Configure Alerts
+### Step 6: Configure Alerts
 
 1. Go to Kibana → Stack Management → Rules and Connectors
 2. Import alert rules from `kibana/alerts/`
