@@ -129,10 +129,25 @@ log_info "  Created: nifi-counters*"
 DASHBOARD_FILE="${PROJECT_DIR}/kibana/nifi-dashboard.ndjson"
 if [ -f "$DASHBOARD_FILE" ]; then
     log_info "Importing dashboard..."
-    curl -s -X POST ${AUTH} "${KIBANA_URL}/api/saved_objects/_import?overwrite=true" \
+    IMPORT_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST ${AUTH} "${KIBANA_URL}/api/saved_objects/_import?overwrite=true" \
       -H "kbn-xsrf: true" \
-      --form file=@"${DASHBOARD_FILE}" > /dev/null
-    log_info "Dashboard imported successfully"
+      --form file=@"${DASHBOARD_FILE}" 2>&1)
+    IMPORT_HTTP_CODE=$(echo "$IMPORT_RESPONSE" | tail -n1)
+    IMPORT_BODY=$(echo "$IMPORT_RESPONSE" | sed '$d')
+    
+    if [ "$IMPORT_HTTP_CODE" != "200" ]; then
+        log_warn "Dashboard import may have issues"
+        log_warn "HTTP Status: ${IMPORT_HTTP_CODE}"
+        log_warn "Response: ${IMPORT_BODY}"
+    else
+        # Check for errors in response
+        if echo "$IMPORT_BODY" | grep -q '"success":false'; then
+            log_warn "Dashboard import completed with errors:"
+            log_warn "${IMPORT_BODY}"
+        else
+            log_info "Dashboard imported successfully"
+        fi
+    fi
 else
     log_warn "Dashboard file not found: ${DASHBOARD_FILE}"
 fi

@@ -86,8 +86,7 @@
             "taskCount": { "type": "long" },
             "tasksDuration": { "type": "keyword" },
             "tasksDurationNanos": { "type": "long" },
-            "terminatedThreadCount": { "type": "integer" },
-            "processingNanos": { "type": "long" }
+            "terminatedThreadCount": { "type": "integer" }
           }
         }
       }

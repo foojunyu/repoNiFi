@@ -72,14 +72,17 @@
               "flowFileRepoUsedBytes": "${flowFileRepoUsed:replaceAll('[^0-9]', '')}",
               "flowFileRepoFreeBytes": "${flowFileRepoFree:replaceAll('[^0-9]', '')}",
               "flowFileRepoTotalBytes": "${flowFileRepoTotal:replaceAll('[^0-9]', '')}",
+              "flowFileRepoUtilization": "${flowFileRepoUsed:replaceAll('[^0-9]', ''):divide(${flowFileRepoTotal:replaceAll('[^0-9]', '')}):multiply(100)}",
               "contentRepoUsedBytes": "${contentRepoUsed:replaceAll('[^0-9]', '')}",
               "contentRepoFreeBytes": "${contentRepoFree:replaceAll('[^0-9]', '')}",
               "contentRepoTotalBytes": "${contentRepoTotal:replaceAll('[^0-9]', '')}",
+              "contentRepoUtilization": "${contentRepoUsed:replaceAll('[^0-9]', ''):divide(${contentRepoTotal:replaceAll('[^0-9]', '')}):multiply(100)}",
               "provenanceRepoUsedBytes": "${provenanceRepoUsed:replaceAll('[^0-9]', '')}",
               "provenanceRepoFreeBytes": "${provenanceRepoFree:replaceAll('[^0-9]', '')}",
-              "provenanceRepoTotalBytes": "${provenanceRepoTotal:replaceAll('[^0-9]', '')}"
+              "provenanceRepoTotalBytes": "${provenanceRepoTotal:replaceAll('[^0-9]', '')}",
+              "provenanceRepoUtilization": "${provenanceRepoUsed:replaceAll('[^0-9]', ''):divide(${provenanceRepoTotal:replaceAll('[^0-9]', '')}):multiply(100)}"
             },
-            "comments": "Adds timestamp, metadata, and numeric conversions for Elasticsearch indexing"
+            "comments": "Adds timestamp, metadata, numeric conversions, and utilization percentages for Elasticsearch indexing"
           },
           {
             "identifier": "system-to-json",
@@ -88,7 +91,7 @@
             "bundle": {"group": "org.apache.nifi", "artifact": "nifi-standard-nar", "version": "1.23.2"},
             "properties": {
               "Destination": "flowfile-content",
-              "Attributes List": "@timestamp,metric_type,nifi_instance,heapUsed,heapMax,heapUtilization,heapUtilizationPercent,heapUsedBytes,heapMaxBytes,availableProcessors,processorLoadAverage,totalThreads,daemonThreads,uptime,uptimeMillis,gcCount,gcTime,gcTimeMillis,flowFileRepoUsed,flowFileRepoFree,flowFileRepoTotal,flowFileRepoUsedBytes,flowFileRepoFreeBytes,flowFileRepoTotalBytes,contentRepoUsed,contentRepoFree,contentRepoTotal,contentRepoUsedBytes,contentRepoFreeBytes,contentRepoTotalBytes,provenanceRepoUsed,provenanceRepoFree,provenanceRepoTotal,provenanceRepoUsedBytes,provenanceRepoFreeBytes,provenanceRepoTotalBytes",
+              "Attributes List": "@timestamp,metric_type,nifi_instance,heapUsed,heapMax,heapUtilization,heapUtilizationPercent,heapUsedBytes,heapMaxBytes,availableProcessors,processorLoadAverage,totalThreads,daemonThreads,uptime,uptimeMillis,gcCount,gcTime,gcTimeMillis,flowFileRepoUsed,flowFileRepoFree,flowFileRepoTotal,flowFileRepoUsedBytes,flowFileRepoFreeBytes,flowFileRepoTotalBytes,flowFileRepoUtilization,contentRepoUsed,contentRepoFree,contentRepoTotal,contentRepoUsedBytes,contentRepoFreeBytes,contentRepoTotalBytes,contentRepoUtilization,provenanceRepoUsed,provenanceRepoFree,provenanceRepoTotal,provenanceRepoUsedBytes,provenanceRepoFreeBytes,provenanceRepoTotalBytes,provenanceRepoUtilization",
               "Include Core Attributes": "false"
             },
             "comments": "Converts system metrics attributes to JSON for Elasticsearch"
@@ -266,7 +269,7 @@
               "@timestamp": "${now():format(\"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'\")}",
               "metric_type": "connection_stats",
               "nifi_instance": "${hostname()}",
-              "queue_stuck_alert": "${queuedCount:gt(10000):and(${flowFilesOut:equals(0)})}",
+              "queue_stuck_alert": "${queuedCount:gt(10000):and(${flowFilesOut:lt(1)})}",
               "queuedSizeBytes": "${queuedSize:replaceAll('[^0-9]', '')}"
             },
             "comments": "Adds timestamp, stuck queue alert flag, and numeric conversions"
