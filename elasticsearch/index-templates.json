@@ -1,0 +1,223 @@
+{
+  "index_templates": [
+    {
+      "name": "nifi-system-metrics-template",
+      "index_patterns": ["nifi-system-metrics*"],
+      "template": {
+        "settings": {
+          "number_of_shards": 1,
+          "number_of_replicas": 1,
+          "index.lifecycle.name": "nifi-metrics-policy",
+          "index.lifecycle.rollover_alias": "nifi-system-metrics"
+        },
+        "mappings": {
+          "properties": {
+            "@timestamp": { "type": "date" },
+            "metric_type": { "type": "keyword" },
+            "nifi_instance": { "type": "keyword" },
+            "heapUsed": { "type": "keyword" },
+            "heapMax": { "type": "keyword" },
+            "heapUtilization": { "type": "keyword" },
+            "heapUsedBytes": { "type": "long" },
+            "heapMaxBytes": { "type": "long" },
+            "heapUtilizationPercent": { "type": "float" },
+            "availableProcessors": { "type": "integer" },
+            "processorLoadAverage": { "type": "float" },
+            "totalThreads": { "type": "integer" },
+            "daemonThreads": { "type": "integer" },
+            "uptime": { "type": "keyword" },
+            "uptimeMillis": { "type": "long" },
+            "gcCount": { "type": "long" },
+            "gcTime": { "type": "keyword" },
+            "gcTimeMillis": { "type": "long" },
+            "flowFileRepoUsed": { "type": "keyword" },
+            "flowFileRepoFree": { "type": "keyword" },
+            "flowFileRepoTotal": { "type": "keyword" },
+            "flowFileRepoUsedBytes": { "type": "long" },
+            "flowFileRepoFreeBytes": { "type": "long" },
+            "flowFileRepoTotalBytes": { "type": "long" },
+            "flowFileRepoUtilization": { "type": "float" },
+            "contentRepoUsed": { "type": "keyword" },
+            "contentRepoFree": { "type": "keyword" },
+            "contentRepoTotal": { "type": "keyword" },
+            "contentRepoUsedBytes": { "type": "long" },
+            "contentRepoFreeBytes": { "type": "long" },
+            "contentRepoTotalBytes": { "type": "long" },
+            "contentRepoUtilization": { "type": "float" },
+            "provenanceRepoUsed": { "type": "keyword" },
+            "provenanceRepoFree": { "type": "keyword" },
+            "provenanceRepoTotal": { "type": "keyword" },
+            "provenanceRepoUsedBytes": { "type": "long" },
+            "provenanceRepoFreeBytes": { "type": "long" },
+            "provenanceRepoTotalBytes": { "type": "long" },
+            "provenanceRepoUtilization": { "type": "float" }
+          }
+        }
+      }
+    },
+    {
+      "name": "nifi-processor-stats-template",
+      "index_patterns": ["nifi-processor-stats*"],
+      "template": {
+        "settings": {
+          "number_of_shards": 1,
+          "number_of_replicas": 1,
+          "index.lifecycle.name": "nifi-metrics-policy",
+          "index.lifecycle.rollover_alias": "nifi-processor-stats"
+        },
+        "mappings": {
+          "properties": {
+            "@timestamp": { "type": "date" },
+            "metric_type": { "type": "keyword" },
+            "nifi_instance": { "type": "keyword" },
+            "processor_id": { "type": "keyword" },
+            "processor_name": { "type": "keyword" },
+            "processor_type": { "type": "keyword" },
+            "processor_state": { "type": "keyword" },
+            "activeThreadCount": { "type": "integer" },
+            "bytesIn": { "type": "long" },
+            "bytesOut": { "type": "long" },
+            "bytesRead": { "type": "long" },
+            "bytesWritten": { "type": "long" },
+            "flowFilesIn": { "type": "long" },
+            "flowFilesOut": { "type": "long" },
+            "input": { "type": "keyword" },
+            "output": { "type": "keyword" },
+            "taskCount": { "type": "long" },
+            "tasksDuration": { "type": "keyword" },
+            "tasksDurationNanos": { "type": "long" },
+            "terminatedThreadCount": { "type": "integer" }
+          }
+        }
+      }
+    },
+    {
+      "name": "nifi-connection-stats-template",
+      "index_patterns": ["nifi-connection-stats*"],
+      "template": {
+        "settings": {
+          "number_of_shards": 1,
+          "number_of_replicas": 1,
+          "index.lifecycle.name": "nifi-metrics-policy",
+          "index.lifecycle.rollover_alias": "nifi-connection-stats"
+        },
+        "mappings": {
+          "properties": {
+            "@timestamp": { "type": "date" },
+            "metric_type": { "type": "keyword" },
+            "nifi_instance": { "type": "keyword" },
+            "connection_id": { "type": "keyword" },
+            "connection_name": { "type": "keyword" },
+            "source_name": { "type": "keyword" },
+            "destination_name": { "type": "keyword" },
+            "queuedCount": { "type": "long" },
+            "queuedSize": { "type": "keyword" },
+            "queuedSizeBytes": { "type": "long" },
+            "queued": { "type": "keyword" },
+            "percentUseCount": { "type": "float" },
+            "percentUseBytes": { "type": "float" },
+            "flowFilesIn": { "type": "long" },
+            "flowFilesOut": { "type": "long" },
+            "bytesIn": { "type": "long" },
+            "bytesOut": { "type": "long" },
+            "queue_stuck_alert": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    {
+      "name": "nifi-bulletins-template",
+      "index_patterns": ["nifi-bulletins*"],
+      "template": {
+        "settings": {
+          "number_of_shards": 1,
+          "number_of_replicas": 1,
+          "index.lifecycle.name": "nifi-metrics-policy",
+          "index.lifecycle.rollover_alias": "nifi-bulletins"
+        },
+        "mappings": {
+          "properties": {
+            "@timestamp": { "type": "date" },
+            "metric_type": { "type": "keyword" },
+            "nifi_instance": { "type": "keyword" },
+            "bulletin_id": { "type": "keyword" },
+            "bulletin_category": { "type": "keyword" },
+            "bulletin_level": { "type": "keyword" },
+            "bulletin_message": { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } } },
+            "bulletin_timestamp": { "type": "date", "format": "yyyy-MM-dd HH:mm:ss,SSS||yyyy-MM-dd'T'HH:mm:ss.SSS'Z'||epoch_millis" },
+            "source_id": { "type": "keyword" },
+            "source_name": { "type": "keyword" },
+            "source_type": { "type": "keyword" },
+            "group_id": { "type": "keyword" },
+            "group_name": { "type": "keyword" },
+            "is_error": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    {
+      "name": "nifi-counters-template",
+      "index_patterns": ["nifi-counters*"],
+      "template": {
+        "settings": {
+          "number_of_shards": 1,
+          "number_of_replicas": 1,
+          "index.lifecycle.name": "nifi-metrics-policy",
+          "index.lifecycle.rollover_alias": "nifi-counters"
+        },
+        "mappings": {
+          "properties": {
+            "@timestamp": { "type": "date" },
+            "metric_type": { "type": "keyword" },
+            "nifi_instance": { "type": "keyword" },
+            "counter_id": { "type": "keyword" },
+            "counter_context": { "type": "keyword" },
+            "counter_name": { "type": "keyword" },
+            "counter_value": { "type": "long" }
+          }
+        }
+      }
+    }
+  ],
+  "ilm_policy": {
+    "name": "nifi-metrics-policy",
+    "policy": {
+      "phases": {
+        "hot": {
+          "min_age": "0ms",
+          "actions": {
+            "rollover": {
+              "max_age": "1d",
+              "max_size": "50gb"
+            }
+          }
+        },
+        "warm": {
+          "min_age": "7d",
+          "actions": {
+            "shrink": {
+              "number_of_shards": 1
+            },
+            "forcemerge": {
+              "max_num_segments": 1
+            }
+          }
+        },
+        "cold": {
+          "min_age": "30d",
+          "actions": {
+            "allocate": {
+              "number_of_replicas": 0
+            }
+          }
+        },
+        "delete": {
+          "min_age": "90d",
+          "actions": {
+            "delete": {}
+          }
+        }
+      }
+    }
+  }
+}
