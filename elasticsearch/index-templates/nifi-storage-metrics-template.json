@@ -1,0 +1,97 @@
+{
+  "index_patterns": ["nifi-storage-metrics-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 1,
+      "index.refresh_interval": "30s",
+      "index.lifecycle.name": "nifi-metrics-ilm-policy",
+      "index.lifecycle.rollover_alias": "nifi-storage-metrics"
+    },
+    "mappings": {
+      "properties": {
+        "@timestamp": {
+          "type": "date"
+        },
+        "cluster": {
+          "properties": {
+            "id": { "type": "keyword" },
+            "name": { "type": "keyword" },
+            "nodeId": { "type": "keyword" }
+          }
+        },
+        "repository": {
+          "properties": {
+            "name": { "type": "keyword" },
+            "type": { 
+              "type": "keyword",
+              "doc_values": true
+            }
+          }
+        },
+        "flowfileRepository": {
+          "properties": {
+            "totalSpace": { "type": "long" },
+            "usedSpace": { "type": "long" },
+            "freeSpace": { "type": "long" },
+            "usedSpacePercent": { "type": "float" },
+            "freeSpacePercent": { "type": "float" },
+            "storageLocation": { "type": "keyword" }
+          }
+        },
+        "contentRepository": {
+          "properties": {
+            "containers": {
+              "type": "nested",
+              "properties": {
+                "name": { "type": "keyword" },
+                "totalSpace": { "type": "long" },
+                "usedSpace": { "type": "long" },
+                "freeSpace": { "type": "long" },
+                "usedSpacePercent": { "type": "float" },
+                "freeSpacePercent": { "type": "float" },
+                "storageLocation": { "type": "keyword" }
+              }
+            },
+            "totalSpace": { "type": "long" },
+            "usedSpace": { "type": "long" },
+            "freeSpace": { "type": "long" },
+            "usedSpacePercent": { "type": "float" }
+          }
+        },
+        "provenanceRepository": {
+          "properties": {
+            "containers": {
+              "type": "nested",
+              "properties": {
+                "name": { "type": "keyword" },
+                "totalSpace": { "type": "long" },
+                "usedSpace": { "type": "long" },
+                "freeSpace": { "type": "long" },
+                "usedSpacePercent": { "type": "float" },
+                "freeSpacePercent": { "type": "float" },
+                "storageLocation": { "type": "keyword" }
+              }
+            },
+            "totalSpace": { "type": "long" },
+            "usedSpace": { "type": "long" },
+            "freeSpace": { "type": "long" },
+            "usedSpacePercent": { "type": "float" }
+          }
+        },
+        "totalSpace": { "type": "long" },
+        "usedSpace": { "type": "long" },
+        "freeSpace": { "type": "long" },
+        "usedSpacePercent": { "type": "float" },
+        "storageLocation": { "type": "keyword" }
+      }
+    }
+  },
+  "priority": 100,
+  "composed_of": [],
+  "version": 1,
+  "_meta": {
+    "description": "Index template for NiFi storage/repository metrics",
+    "created_by": "NiFi Monitoring Solution"
+  }
+}

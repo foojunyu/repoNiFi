@@ -1,0 +1,32 @@
+{
+  "name": "NiFi High Transaction Error Alert",
+  "consumer": "alerts",
+  "alertTypeId": ".es-query",
+  "schedule": {
+    "interval": "5m"
+  },
+  "enabled": true,
+  "tags": ["nifi", "errors", "transactions", "critical"],
+  "throttle": "30m",
+  "notifyWhen": "onActiveAlert",
+  "params": {
+    "index": ["nifi-processor-metrics-*"],
+    "timeField": "@timestamp",
+    "timeWindowSize": 5,
+    "timeWindowUnit": "m",
+    "threshold": [5],
+    "thresholdComparator": ">=",
+    "size": 100,
+    "esQuery": "{\n  \"query\": {\n    \"bool\": {\n      \"must\": [\n        {\n          \"range\": {\n            \"errors.count\": {\n              \"gte\": 1\n            }\n          }\n        }\n      ],\n      \"filter\": [\n        {\n          \"range\": {\n            \"@timestamp\": {\n              \"gte\": \"now-5m\"\n            }\n          }\n        }\n      ]\n    }\n  },\n  \"aggs\": {\n    \"error_processors\": {\n      \"terms\": {\n        \"field\": \"processor.name\",\n        \"size\": 10,\n        \"order\": {\n          \"error_count\": \"desc\"\n        }\n      },\n      \"aggs\": {\n        \"error_count\": {\n          \"sum\": {\n            \"field\": \"errors.count\"\n          }\n        }\n      }\n    }\n  }\n}",
+    "excludeHitsFromPreviousRun": false,
+    "aggType": "sum",
+    "aggField": "errors.count",
+    "groupBy": "all"
+  },
+  "actions": [],
+  "_meta": {
+    "description": "Alert when transaction error rate exceeds 5% of total transactions or absolute error count is high. Indicates processor configuration issues or data quality problems.",
+    "severity": "critical",
+    "response": "1. Check processor bulletins for error details\n2. Review processor configuration\n3. Verify input data format\n4. Check downstream system availability"
+  }
+}

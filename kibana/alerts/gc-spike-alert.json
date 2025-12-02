@@ -1,0 +1,32 @@
+{
+  "name": "NiFi GC Spike Alert",
+  "consumer": "alerts",
+  "alertTypeId": ".es-query",
+  "schedule": {
+    "interval": "1m"
+  },
+  "enabled": true,
+  "tags": ["nifi", "gc", "jvm", "performance", "warning"],
+  "throttle": "15m",
+  "notifyWhen": "onActiveAlert",
+  "params": {
+    "index": ["nifi-system-metrics-*"],
+    "timeField": "@timestamp",
+    "timeWindowSize": 5,
+    "timeWindowUnit": "m",
+    "threshold": [500],
+    "thresholdComparator": ">=",
+    "size": 100,
+    "esQuery": "{\n  \"query\": {\n    \"bool\": {\n      \"must\": [\n        {\n          \"range\": {\n            \"jvm.gc.totalCollectionTime\": {\n              \"gte\": 500\n            }\n          }\n        }\n      ],\n      \"filter\": [\n        {\n          \"range\": {\n            \"@timestamp\": {\n              \"gte\": \"now-5m\"\n            }\n          }\n        }\n      ]\n    }\n  }\n}",
+    "excludeHitsFromPreviousRun": false,
+    "aggType": "max",
+    "aggField": "jvm.gc.totalCollectionTime",
+    "groupBy": "all"
+  },
+  "actions": [],
+  "_meta": {
+    "description": "Alert when GC collection time exceeds 500ms in any 5-minute window. High GC times can indicate memory pressure and may cause flow processing delays.",
+    "severity": "warning",
+    "response": "1. Check heap utilization\n2. Review memory-intensive processors\n3. Consider increasing heap size\n4. Analyze GC logs for full GC patterns"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "name": "NiFi Queue Stuck Alert",
+  "consumer": "alerts",
+  "alertTypeId": ".es-query",
+  "schedule": {
+    "interval": "5m"
+  },
+  "enabled": true,
+  "tags": ["nifi", "queue", "stuck", "critical"],
+  "throttle": "30m",
+  "notifyWhen": "onActiveAlert",
+  "params": {
+    "index": ["nifi-connection-metrics-*"],
+    "timeField": "@timestamp",
+    "timeWindowSize": 10,
+    "timeWindowUnit": "m",
+    "threshold": [1000],
+    "thresholdComparator": ">=",
+    "size": 100,
+    "esQuery": "{\n  \"query\": {\n    \"bool\": {\n      \"must\": [\n        {\n          \"range\": {\n            \"queue.queuedCount\": {\n              \"gte\": 1000\n            }\n          }\n        }\n      ],\n      \"filter\": [\n        {\n          \"range\": {\n            \"@timestamp\": {\n              \"gte\": \"now-10m\"\n            }\n          }\n        }\n      ]\n    }\n  },\n  \"aggs\": {\n    \"stuck_queues\": {\n      \"terms\": {\n        \"field\": \"connection.id\",\n        \"size\": 10\n      },\n      \"aggs\": {\n        \"queue_variance\": {\n          \"extended_stats\": {\n            \"field\": \"queue.queuedCount\"\n          }\n        }\n      }\n    }\n  }\n}",
+    "excludeHitsFromPreviousRun": false,
+    "aggType": "count",
+    "groupBy": "all"
+  },
+  "actions": [],
+  "_meta": {
+    "description": "Alert when queue size remains unchanged (stuck) for more than 10 minutes with over 1000 flowfiles. Indicates potential downstream issues or processor problems.",
+    "severity": "critical",
+    "response": "1. Check destination processor status\n2. Verify downstream connections\n3. Check for processor errors\n4. Consider stopping and restarting affected processors"
+  }
+}

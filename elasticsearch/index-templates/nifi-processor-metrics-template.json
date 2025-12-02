@@ -1,0 +1,87 @@
+{
+  "index_patterns": ["nifi-processor-metrics-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 1,
+      "index.refresh_interval": "30s",
+      "index.lifecycle.name": "nifi-metrics-ilm-policy",
+      "index.lifecycle.rollover_alias": "nifi-processor-metrics"
+    },
+    "mappings": {
+      "properties": {
+        "@timestamp": {
+          "type": "date"
+        },
+        "cluster": {
+          "properties": {
+            "id": { "type": "keyword" },
+            "name": { "type": "keyword" },
+            "nodeId": { "type": "keyword" }
+          }
+        },
+        "processGroup": {
+          "properties": {
+            "id": { "type": "keyword" },
+            "name": { "type": "keyword" },
+            "path": { "type": "keyword" }
+          }
+        },
+        "processor": {
+          "properties": {
+            "id": { "type": "keyword" },
+            "name": { "type": "keyword" },
+            "type": { "type": "keyword" },
+            "runStatus": { "type": "keyword" },
+            "validationStatus": { "type": "keyword" }
+          }
+        },
+        "stats": {
+          "properties": {
+            "flowFilesIn": { "type": "long" },
+            "flowFilesOut": { "type": "long" },
+            "flowFilesRemoved": { "type": "long" },
+            "bytesIn": { "type": "long" },
+            "bytesOut": { "type": "long" },
+            "bytesRead": { "type": "long" },
+            "bytesWritten": { "type": "long" },
+            "invocations": { "type": "long" },
+            "processingNanos": { "type": "long" },
+            "processingMillis": { "type": "long" },
+            "averageLineageDuration": { "type": "long" },
+            "activeThreadCount": { "type": "integer" },
+            "terminatedThreadCount": { "type": "integer" },
+            "taskCount": { "type": "long" },
+            "tasksDurationNanos": { "type": "long" }
+          }
+        },
+        "errors": {
+          "properties": {
+            "count": { "type": "long" },
+            "lastError": { "type": "text" },
+            "lastErrorTimestamp": { "type": "date" }
+          }
+        },
+        "errorRate": {
+          "type": "float"
+        },
+        "transactionRate": {
+          "type": "float"
+        },
+        "throughput": {
+          "properties": {
+            "bytesPerSecond": { "type": "float" },
+            "flowFilesPerSecond": { "type": "float" }
+          }
+        }
+      }
+    }
+  },
+  "priority": 100,
+  "composed_of": [],
+  "version": 1,
+  "_meta": {
+    "description": "Index template for NiFi processor metrics",
+    "created_by": "NiFi Monitoring Solution"
+  }
+}
