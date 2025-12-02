@@ -1,0 +1,282 @@
+{
+  "alerting_rules": [
+    {
+      "name": "NiFi Queue Stuck Alert",
+      "description": "Triggers when a queue has items but no output for extended period",
+      "rule_type": "elasticsearch_query",
+      "index": "nifi-connection-stats*",
+      "conditions": {
+        "query": {
+          "bool": {
+            "must": [
+              { "term": { "queue_stuck_alert": true } },
+              { "range": { "queuedCount": { "gt": 1000 } } }
+            ]
+          }
+        },
+        "time_window": "5m",
+        "threshold": 3
+      },
+      "actions": [
+        {
+          "action_type": "slack",
+          "message": "🚨 NiFi Queue Stuck Alert!\nConnection: {{context.connection_name}}\nQueued Count: {{context.queuedCount}}\nInstance: {{context.nifi_instance}}\nTime: {{context.timestamp}}"
+        },
+        {
+          "action_type": "email",
+          "subject": "[ALERT] NiFi Queue Stuck - {{context.connection_name}}",
+          "body": "A NiFi queue appears to be stuck.\n\nDetails:\n- Connection: {{context.connection_name}}\n- Source: {{context.source_name}}\n- Destination: {{context.destination_name}}\n- Queued Count: {{context.queuedCount}}\n- Instance: {{context.nifi_instance}}\n- Timestamp: {{context.timestamp}}\n\nPlease investigate immediately."
+        }
+      ],
+      "throttle": "15m",
+      "severity": "critical"
+    },
+    {
+      "name": "NiFi GC Spike Alert",
+      "description": "Triggers when garbage collection time increases significantly",
+      "rule_type": "elasticsearch_query",
+      "index": "nifi-system-metrics*",
+      "conditions": {
+        "aggregation": {
+          "type": "derivative",
+          "field": "gcTimeMillis",
+          "time_window": "5m"
+        },
+        "threshold": {
+          "comparator": ">",
+          "value": 5000
+        }
+      },
+      "actions": [
+        {
+          "action_type": "slack",
+          "message": "⚠️ NiFi GC Spike Detected!\nGC Time Increase: {{context.gc_time_delta}}ms\nCurrent GC Count: {{context.gcCount}}\nHeap Utilization: {{context.heapUtilization}}\nInstance: {{context.nifi_instance}}"
+        },
+        {
+          "action_type": "email",
+          "subject": "[WARNING] NiFi GC Spike Detected",
+          "body": "Garbage collection spike detected in NiFi.\n\nDetails:\n- GC Time Increase: {{context.gc_time_delta}}ms\n- Current GC Count: {{context.gcCount}}\n- Heap Used: {{context.heapUsed}}\n- Heap Max: {{context.heapMax}}\n- Heap Utilization: {{context.heapUtilization}}\n- Instance: {{context.nifi_instance}}\n- Timestamp: {{context.timestamp}}\n\nConsider increasing heap size or investigating memory leaks."
+        }
+      ],
+      "throttle": "10m",
+      "severity": "warning"
+    },
+    {
+      "name": "NiFi High Transaction Errors Alert",
+      "description": "Triggers when error rate exceeds threshold",
+      "rule_type": "elasticsearch_query",
+      "index": "nifi-bulletins*",
+      "conditions": {
+        "query": {
+          "bool": {
+            "must": [
+              { "term": { "bulletin_level": "ERROR" } }
+            ]
+          }
+        },
+        "time_window": "5m",
+        "threshold": 10
+      },
+      "actions": [
+        {
+          "action_type": "slack",
+          "message": "🔴 NiFi High Error Rate Alert!\nErrors in last 5 minutes: {{context.error_count}}\nTop Error Source: {{context.top_source}}\nInstance: {{context.nifi_instance}}"
+        },
+        {
+          "action_type": "email",
+          "subject": "[CRITICAL] NiFi High Transaction Error Rate",
+          "body": "High error rate detected in NiFi.\n\nDetails:\n- Error Count (5m): {{context.error_count}}\n- Top Error Sources:\n{{#context.error_sources}}\n  - {{source_name}}: {{count}} errors\n{{/context.error_sources}}\n- Instance: {{context.nifi_instance}}\n- Timestamp: {{context.timestamp}}\n\nImmediate investigation required."
+        }
+      ],
+      "throttle": "5m",
+      "severity": "critical"
+    },
+    {
+      "name": "NiFi Heap Memory Critical Alert",
+      "description": "Triggers when heap utilization exceeds 90%",
+      "rule_type": "elasticsearch_query",
+      "index": "nifi-system-metrics*",
+      "conditions": {
+        "query": {
+          "bool": {
+            "must": [
+              { "range": { "heapUtilizationPercent": { "gte": 90 } } }
+            ]
+          }
+        },
+        "time_window": "2m",
+        "threshold": 2
+      },
+      "actions": [
+        {
+          "action_type": "slack",
+          "message": "🔥 NiFi Heap Memory Critical!\nHeap Utilization: {{context.heapUtilization}}%\nHeap Used: {{context.heapUsed}}\nHeap Max: {{context.heapMax}}\nInstance: {{context.nifi_instance}}"
+        },
+        {
+          "action_type": "pagerduty",
+          "severity": "critical",
+          "summary": "NiFi heap memory critical at {{context.heapUtilization}}%"
+        }
+      ],
+      "throttle": "5m",
+      "severity": "critical"
+    },
+    {
+      "name": "NiFi Disk Space Low Alert",
+      "description": "Triggers when any repository disk usage exceeds 85%",
+      "rule_type": "elasticsearch_query",
+      "index": "nifi-system-metrics*",
+      "conditions": {
+        "query": {
+          "bool": {
+            "should": [
+              { "range": { "flowFileRepoUtilization": { "gte": 85 } } },
+              { "range": { "contentRepoUtilization": { "gte": 85 } } },
+              { "range": { "provenanceRepoUtilization": { "gte": 85 } } }
+            ],
+            "minimum_should_match": 1
+          }
+        },
+        "time_window": "5m",
+        "threshold": 1
+      },
+      "actions": [
+        {
+          "action_type": "slack",
+          "message": "💾 NiFi Disk Space Low!\nFlowFile Repo: {{context.flowFileRepoUtilization}}%\nContent Repo: {{context.contentRepoUtilization}}%\nProvenance Repo: {{context.provenanceRepoUtilization}}%\nInstance: {{context.nifi_instance}}"
+        },
+        {
+          "action_type": "email",
+          "subject": "[WARNING] NiFi Disk Space Low",
+          "body": "Repository disk space is running low.\n\nDetails:\n- FlowFile Repo: {{context.flowFileRepoUsed}} / {{context.flowFileRepoTotal}} ({{context.flowFileRepoUtilization}}%)\n- Content Repo: {{context.contentRepoUsed}} / {{context.contentRepoTotal}} ({{context.contentRepoUtilization}}%)\n- Provenance Repo: {{context.provenanceRepoUsed}} / {{context.provenanceRepoTotal}} ({{context.provenanceRepoUtilization}}%)\n- Instance: {{context.nifi_instance}}\n\nConsider cleaning up old data or expanding storage."
+        }
+      ],
+      "throttle": "30m",
+      "severity": "warning"
+    },
+    {
+      "name": "NiFi CPU Load High Alert",
+      "description": "Triggers when CPU load average is consistently high",
+      "rule_type": "elasticsearch_query",
+      "index": "nifi-system-metrics*",
+      "conditions": {
+        "aggregation": {
+          "type": "avg",
+          "field": "processorLoadAverage",
+          "time_window": "5m"
+        },
+        "threshold": {
+          "comparator": ">",
+          "value": 0.8
+        }
+      },
+      "actions": [
+        {
+          "action_type": "slack",
+          "message": "🔥 NiFi High CPU Load!\nCPU Load Average: {{context.processorLoadAverage}}\nTotal Threads: {{context.totalThreads}}\nInstance: {{context.nifi_instance}}"
+        }
+      ],
+      "throttle": "15m",
+      "severity": "warning"
+    },
+    {
+      "name": "NiFi Thread Count High Alert",
+      "description": "Triggers when thread count is abnormally high",
+      "rule_type": "elasticsearch_query",
+      "index": "nifi-system-metrics*",
+      "conditions": {
+        "query": {
+          "bool": {
+            "must": [
+              { "range": { "totalThreads": { "gte": 500 } } }
+            ]
+          }
+        },
+        "time_window": "5m",
+        "threshold": 3
+      },
+      "actions": [
+        {
+          "action_type": "slack",
+          "message": "🧵 NiFi High Thread Count!\nTotal Threads: {{context.totalThreads}}\nDaemon Threads: {{context.daemonThreads}}\nInstance: {{context.nifi_instance}}"
+        }
+      ],
+      "throttle": "30m",
+      "severity": "warning"
+    }
+  ],
+  "anomaly_detection_jobs": [
+    {
+      "job_id": "nifi-heap-anomaly",
+      "description": "Detects anomalies in heap memory usage patterns",
+      "analysis_config": {
+        "bucket_span": "5m",
+        "detectors": [
+          {
+            "function": "mean",
+            "field_name": "heapUtilizationPercent",
+            "detector_description": "Heap utilization anomaly"
+          }
+        ],
+        "influencers": ["nifi_instance"]
+      },
+      "data_description": {
+        "time_field": "@timestamp"
+      },
+      "datafeed": {
+        "indices": ["nifi-system-metrics*"],
+        "query": {"match_all": {}}
+      }
+    },
+    {
+      "job_id": "nifi-transaction-spike",
+      "description": "Detects unusual spikes in transaction volume",
+      "analysis_config": {
+        "bucket_span": "5m",
+        "detectors": [
+          {
+            "function": "high_sum",
+            "field_name": "flowFilesIn",
+            "detector_description": "Transaction spike detection"
+          }
+        ],
+        "influencers": ["nifi_instance", "processor_name"]
+      },
+      "data_description": {
+        "time_field": "@timestamp"
+      },
+      "datafeed": {
+        "indices": ["nifi-processor-stats*"],
+        "query": {"match_all": {}}
+      }
+    },
+    {
+      "job_id": "nifi-error-trend",
+      "description": "Detects unusual patterns in error occurrences",
+      "analysis_config": {
+        "bucket_span": "15m",
+        "detectors": [
+          {
+            "function": "count",
+            "by_field_name": "source_name",
+            "detector_description": "Error trend by processor"
+          }
+        ],
+        "influencers": ["nifi_instance", "source_name", "bulletin_level"]
+      },
+      "data_description": {
+        "time_field": "@timestamp"
+      },
+      "datafeed": {
+        "indices": ["nifi-bulletins*"],
+        "query": {
+          "bool": {
+            "must": [
+              {"term": {"bulletin_level": "ERROR"}}
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

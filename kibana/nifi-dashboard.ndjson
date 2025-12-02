@@ -1,0 +1,379 @@
+{
+  "version": "8.10.0",
+  "objects": [
+    {
+      "id": "nifi-performance-dashboard",
+      "type": "dashboard",
+      "attributes": {
+        "title": "NiFi Performance Monitoring Dashboard",
+        "description": "Comprehensive Apache NiFi performance monitoring with system health, processor stats, queue monitoring, and alerts",
+        "panelsJSON": "[{\"version\":\"8.10.0\",\"type\":\"visualization\",\"gridData\":{\"x\":0,\"y\":0,\"w\":24,\"h\":8,\"i\":\"1\"},\"panelIndex\":\"1\",\"embeddableConfig\":{\"title\":\"Heap Usage Over Time\"},\"panelRefName\":\"panel_heap_usage\"},{\"version\":\"8.10.0\",\"type\":\"visualization\",\"gridData\":{\"x\":24,\"y\":0,\"w\":24,\"h\":8,\"i\":\"2\"},\"panelIndex\":\"2\",\"embeddableConfig\":{\"title\":\"CPU Load Average\"},\"panelRefName\":\"panel_cpu_load\"},{\"version\":\"8.10.0\",\"type\":\"visualization\",\"gridData\":{\"x\":0,\"y\":8,\"w\":16,\"h\":8,\"i\":\"3\"},\"panelIndex\":\"3\",\"embeddableConfig\":{\"title\":\"GC Time Trend\"},\"panelRefName\":\"panel_gc_time\"},{\"version\":\"8.10.0\",\"type\":\"visualization\",\"gridData\":{\"x\":16,\"y\":8,\"w\":16,\"h\":8,\"i\":\"4\"},\"panelIndex\":\"4\",\"embeddableConfig\":{\"title\":\"Thread Count\"},\"panelRefName\":\"panel_thread_count\"},{\"version\":\"8.10.0\",\"type\":\"visualization\",\"gridData\":{\"x\":32,\"y\":8,\"w\":16,\"h\":8,\"i\":\"5\"},\"panelIndex\":\"5\",\"embeddableConfig\":{\"title\":\"Uptime\"},\"panelRefName\":\"panel_uptime\"},{\"version\":\"8.10.0\",\"type\":\"visualization\",\"gridData\":{\"x\":0,\"y\":16,\"w\":24,\"h\":10,\"i\":\"6\"},\"panelIndex\":\"6\",\"embeddableConfig\":{\"title\":\"Processor Error Trend\"},\"panelRefName\":\"panel_error_trend\"},{\"version\":\"8.10.0\",\"type\":\"visualization\",\"gridData\":{\"x\":24,\"y\":16,\"w\":24,\"h\":10,\"i\":\"7\"},\"panelIndex\":\"7\",\"embeddableConfig\":{\"title\":\"Transaction Spike Trend\"},\"panelRefName\":\"panel_transaction_trend\"},{\"version\":\"8.10.0\",\"type\":\"visualization\",\"gridData\":{\"x\":0,\"y\":26,\"w\":16,\"h\":8,\"i\":\"8\"},\"panelIndex\":\"8\",\"embeddableConfig\":{\"title\":\"FlowFile Repo Disk Usage\"},\"panelRefName\":\"panel_flowfile_repo\"},{\"version\":\"8.10.0\",\"type\":\"visualization\",\"gridData\":{\"x\":16,\"y\":26,\"w\":16,\"h\":8,\"i\":\"9\"},\"panelIndex\":\"9\",\"embeddableConfig\":{\"title\":\"Content Repo Disk Usage\"},\"panelRefName\":\"panel_content_repo\"},{\"version\":\"8.10.0\",\"type\":\"visualization\",\"gridData\":{\"x\":32,\"y\":26,\"w\":16,\"h\":8,\"i\":\"10\"},\"panelIndex\":\"10\",\"embeddableConfig\":{\"title\":\"Provenance Repo Disk Usage\"},\"panelRefName\":\"panel_provenance_repo\"},{\"version\":\"8.10.0\",\"type\":\"visualization\",\"gridData\":{\"x\":0,\"y\":34,\"w\":48,\"h\":10,\"i\":\"11\"},\"panelIndex\":\"11\",\"embeddableConfig\":{\"title\":\"Queue Depth by Connection\"},\"panelRefName\":\"panel_queue_depth\"},{\"version\":\"8.10.0\",\"type\":\"visualization\",\"gridData\":{\"x\":0,\"y\":44,\"w\":24,\"h\":10,\"i\":\"12\"},\"panelIndex\":\"12\",\"embeddableConfig\":{\"title\":\"Stuck Queue Alerts\"},\"panelRefName\":\"panel_stuck_queue\"},{\"version\":\"8.10.0\",\"type\":\"visualization\",\"gridData\":{\"x\":24,\"y\":44,\"w\":24,\"h\":10,\"i\":\"13\"},\"panelIndex\":\"13\",\"embeddableConfig\":{\"title\":\"Error Bulletins\"},\"panelRefName\":\"panel_error_bulletins\"}]",
+        "timeRestore": true,
+        "timeTo": "now",
+        "timeFrom": "now-24h",
+        "refreshInterval": {
+          "pause": false,
+          "value": 30000
+        },
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"query\":{\"language\":\"kuery\",\"query\":\"\"},\"filter\":[]}"
+        }
+      },
+      "references": [
+        {"name": "panel_heap_usage", "type": "visualization", "id": "heap-usage-visualization"},
+        {"name": "panel_cpu_load", "type": "visualization", "id": "cpu-load-visualization"},
+        {"name": "panel_gc_time", "type": "visualization", "id": "gc-time-visualization"},
+        {"name": "panel_thread_count", "type": "visualization", "id": "thread-count-visualization"},
+        {"name": "panel_uptime", "type": "visualization", "id": "uptime-visualization"},
+        {"name": "panel_error_trend", "type": "visualization", "id": "error-trend-visualization"},
+        {"name": "panel_transaction_trend", "type": "visualization", "id": "transaction-trend-visualization"},
+        {"name": "panel_flowfile_repo", "type": "visualization", "id": "flowfile-repo-visualization"},
+        {"name": "panel_content_repo", "type": "visualization", "id": "content-repo-visualization"},
+        {"name": "panel_provenance_repo", "type": "visualization", "id": "provenance-repo-visualization"},
+        {"name": "panel_queue_depth", "type": "visualization", "id": "queue-depth-visualization"},
+        {"name": "panel_stuck_queue", "type": "visualization", "id": "stuck-queue-visualization"},
+        {"name": "panel_error_bulletins", "type": "visualization", "id": "error-bulletins-visualization"}
+      ]
+    },
+    {
+      "id": "heap-usage-visualization",
+      "type": "visualization",
+      "attributes": {
+        "title": "Heap Usage Over Time",
+        "visState": {
+          "type": "line",
+          "title": "Heap Usage Over Time",
+          "params": {
+            "type": "line",
+            "grid": {"categoryLines": false},
+            "categoryAxes": [{"id": "CategoryAxis-1", "type": "category", "position": "bottom", "title": {}}],
+            "valueAxes": [{"id": "ValueAxis-1", "name": "LeftAxis-1", "type": "value", "position": "left", "title": {"text": "Heap (bytes)"}}],
+            "seriesParams": [
+              {"show": true, "type": "line", "mode": "normal", "data": {"label": "Heap Used", "id": "1"}, "valueAxis": "ValueAxis-1", "lineWidth": 2},
+              {"show": true, "type": "line", "mode": "normal", "data": {"label": "Heap Max", "id": "2"}, "valueAxis": "ValueAxis-1", "lineWidth": 2, "drawLinesBetweenPoints": true}
+            ],
+            "addTooltip": true,
+            "addLegend": true,
+            "legendPosition": "right",
+            "times": [],
+            "addTimeMarker": false,
+            "thresholdLine": {"show": true, "value": null, "width": 1, "style": "dashed", "color": "#E7664C"}
+          },
+          "aggs": [
+            {"id": "1", "enabled": true, "type": "avg", "schema": "metric", "params": {"field": "heapUsedBytes", "customLabel": "Heap Used"}},
+            {"id": "2", "enabled": true, "type": "avg", "schema": "metric", "params": {"field": "heapMaxBytes", "customLabel": "Heap Max"}},
+            {"id": "3", "enabled": true, "type": "date_histogram", "schema": "segment", "params": {"field": "@timestamp", "interval": "auto", "min_doc_count": 1}}
+          ]
+        },
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"index\":\"nifi-system-metrics*\",\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+        }
+      }
+    },
+    {
+      "id": "cpu-load-visualization",
+      "type": "visualization",
+      "attributes": {
+        "title": "CPU Load Average",
+        "visState": {
+          "type": "line",
+          "title": "CPU Load Average",
+          "params": {
+            "type": "line",
+            "addTooltip": true,
+            "addLegend": true,
+            "legendPosition": "right"
+          },
+          "aggs": [
+            {"id": "1", "enabled": true, "type": "avg", "schema": "metric", "params": {"field": "processorLoadAverage", "customLabel": "CPU Load Average"}},
+            {"id": "2", "enabled": true, "type": "date_histogram", "schema": "segment", "params": {"field": "@timestamp", "interval": "auto"}}
+          ]
+        },
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"index\":\"nifi-system-metrics*\",\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+        }
+      }
+    },
+    {
+      "id": "gc-time-visualization",
+      "type": "visualization",
+      "attributes": {
+        "title": "GC Time Trend",
+        "visState": {
+          "type": "area",
+          "title": "GC Time Trend",
+          "params": {
+            "type": "area",
+            "addTooltip": true,
+            "addLegend": true,
+            "legendPosition": "right"
+          },
+          "aggs": [
+            {"id": "1", "enabled": true, "type": "avg", "schema": "metric", "params": {"field": "gcTimeMillis", "customLabel": "GC Time (ms)"}},
+            {"id": "2", "enabled": true, "type": "derivative", "schema": "metric", "params": {"metricAgg": "1", "customLabel": "GC Time Change"}},
+            {"id": "3", "enabled": true, "type": "date_histogram", "schema": "segment", "params": {"field": "@timestamp", "interval": "auto"}}
+          ]
+        },
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"index\":\"nifi-system-metrics*\",\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+        }
+      }
+    },
+    {
+      "id": "thread-count-visualization",
+      "type": "visualization",
+      "attributes": {
+        "title": "Thread Count",
+        "visState": {
+          "type": "line",
+          "title": "Thread Count",
+          "params": {
+            "type": "line",
+            "addTooltip": true,
+            "addLegend": true,
+            "legendPosition": "right"
+          },
+          "aggs": [
+            {"id": "1", "enabled": true, "type": "avg", "schema": "metric", "params": {"field": "totalThreads", "customLabel": "Total Threads"}},
+            {"id": "2", "enabled": true, "type": "avg", "schema": "metric", "params": {"field": "daemonThreads", "customLabel": "Daemon Threads"}},
+            {"id": "3", "enabled": true, "type": "date_histogram", "schema": "segment", "params": {"field": "@timestamp", "interval": "auto"}}
+          ]
+        },
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"index\":\"nifi-system-metrics*\",\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+        }
+      }
+    },
+    {
+      "id": "uptime-visualization",
+      "type": "visualization",
+      "attributes": {
+        "title": "NiFi Uptime",
+        "visState": {
+          "type": "metric",
+          "title": "NiFi Uptime",
+          "params": {
+            "metric": {
+              "percentageMode": false,
+              "useRanges": false,
+              "colorSchema": "Green to Red",
+              "metricColorMode": "None",
+              "colorsRange": [{"from": 0, "to": 10000}],
+              "labels": {"show": true},
+              "invertColors": false,
+              "style": {"bgFill": "#000", "bgColor": false, "labelColor": false, "subText": "", "fontSize": 60}
+            }
+          },
+          "aggs": [
+            {"id": "1", "enabled": true, "type": "max", "schema": "metric", "params": {"field": "uptimeMillis", "customLabel": "Uptime (ms)"}}
+          ]
+        },
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"index\":\"nifi-system-metrics*\",\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+        }
+      }
+    },
+    {
+      "id": "error-trend-visualization",
+      "type": "visualization",
+      "attributes": {
+        "title": "Per Processor Error Trend",
+        "visState": {
+          "type": "line",
+          "title": "Per Processor Error Trend",
+          "params": {
+            "type": "line",
+            "addTooltip": true,
+            "addLegend": true,
+            "legendPosition": "right"
+          },
+          "aggs": [
+            {"id": "1", "enabled": true, "type": "count", "schema": "metric", "params": {"customLabel": "Error Count"}},
+            {"id": "2", "enabled": true, "type": "date_histogram", "schema": "segment", "params": {"field": "@timestamp", "interval": "auto"}},
+            {"id": "3", "enabled": true, "type": "terms", "schema": "group", "params": {"field": "source_name.keyword", "size": 20, "customLabel": "Processor"}}
+          ]
+        },
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"index\":\"nifi-bulletins*\",\"query\":{\"query\":\"bulletin_level:ERROR\",\"language\":\"kuery\"},\"filter\":[]}"
+        }
+      }
+    },
+    {
+      "id": "transaction-trend-visualization",
+      "type": "visualization",
+      "attributes": {
+        "title": "Transaction Spike Trend",
+        "visState": {
+          "type": "line",
+          "title": "Transaction Spike Trend",
+          "params": {
+            "type": "line",
+            "addTooltip": true,
+            "addLegend": true,
+            "legendPosition": "right",
+            "thresholdLine": {"show": true, "value": null, "width": 1, "style": "dashed", "color": "#E7664C"}
+          },
+          "aggs": [
+            {"id": "1", "enabled": true, "type": "sum", "schema": "metric", "params": {"field": "flowFilesIn", "customLabel": "FlowFiles In"}},
+            {"id": "2", "enabled": true, "type": "sum", "schema": "metric", "params": {"field": "flowFilesOut", "customLabel": "FlowFiles Out"}},
+            {"id": "3", "enabled": true, "type": "date_histogram", "schema": "segment", "params": {"field": "@timestamp", "interval": "auto"}},
+            {"id": "4", "enabled": true, "type": "moving_avg", "schema": "metric", "params": {"metricAgg": "1", "window": 5, "customLabel": "Transaction Moving Avg"}}
+          ]
+        },
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"index\":\"nifi-processor-stats*\",\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+        }
+      }
+    },
+    {
+      "id": "flowfile-repo-visualization",
+      "type": "visualization",
+      "attributes": {
+        "title": "FlowFile Repo Disk Usage",
+        "visState": {
+          "type": "pie",
+          "title": "FlowFile Repo Disk Usage",
+          "params": {
+            "type": "pie",
+            "addTooltip": true,
+            "addLegend": true,
+            "legendPosition": "right",
+            "isDonut": true
+          },
+          "aggs": [
+            {"id": "1", "enabled": true, "type": "avg", "schema": "metric", "params": {"field": "flowFileRepoUsedBytes", "customLabel": "Used"}},
+            {"id": "2", "enabled": true, "type": "avg", "schema": "metric", "params": {"field": "flowFileRepoFreeBytes", "customLabel": "Free"}}
+          ]
+        },
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"index\":\"nifi-system-metrics*\",\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+        }
+      }
+    },
+    {
+      "id": "content-repo-visualization",
+      "type": "visualization",
+      "attributes": {
+        "title": "Content Repo Disk Usage",
+        "visState": {
+          "type": "pie",
+          "title": "Content Repo Disk Usage",
+          "params": {
+            "type": "pie",
+            "addTooltip": true,
+            "addLegend": true,
+            "legendPosition": "right",
+            "isDonut": true
+          },
+          "aggs": [
+            {"id": "1", "enabled": true, "type": "avg", "schema": "metric", "params": {"field": "contentRepoUsedBytes", "customLabel": "Used"}},
+            {"id": "2", "enabled": true, "type": "avg", "schema": "metric", "params": {"field": "contentRepoFreeBytes", "customLabel": "Free"}}
+          ]
+        },
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"index\":\"nifi-system-metrics*\",\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+        }
+      }
+    },
+    {
+      "id": "provenance-repo-visualization",
+      "type": "visualization",
+      "attributes": {
+        "title": "Provenance Repo Disk Usage",
+        "visState": {
+          "type": "pie",
+          "title": "Provenance Repo Disk Usage",
+          "params": {
+            "type": "pie",
+            "addTooltip": true,
+            "addLegend": true,
+            "legendPosition": "right",
+            "isDonut": true
+          },
+          "aggs": [
+            {"id": "1", "enabled": true, "type": "avg", "schema": "metric", "params": {"field": "provenanceRepoUsedBytes", "customLabel": "Used"}},
+            {"id": "2", "enabled": true, "type": "avg", "schema": "metric", "params": {"field": "provenanceRepoFreeBytes", "customLabel": "Free"}}
+          ]
+        },
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"index\":\"nifi-system-metrics*\",\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+        }
+      }
+    },
+    {
+      "id": "queue-depth-visualization",
+      "type": "visualization",
+      "attributes": {
+        "title": "Queue Depth by Connection",
+        "visState": {
+          "type": "histogram",
+          "title": "Queue Depth by Connection",
+          "params": {
+            "type": "histogram",
+            "addTooltip": true,
+            "addLegend": true,
+            "legendPosition": "right"
+          },
+          "aggs": [
+            {"id": "1", "enabled": true, "type": "max", "schema": "metric", "params": {"field": "queuedCount", "customLabel": "Queued Count"}},
+            {"id": "2", "enabled": true, "type": "date_histogram", "schema": "segment", "params": {"field": "@timestamp", "interval": "auto"}},
+            {"id": "3", "enabled": true, "type": "terms", "schema": "group", "params": {"field": "connection_name.keyword", "size": 20, "customLabel": "Connection"}}
+          ]
+        },
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"index\":\"nifi-connection-stats*\",\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+        }
+      }
+    },
+    {
+      "id": "stuck-queue-visualization",
+      "type": "visualization",
+      "attributes": {
+        "title": "Stuck Queue Alerts",
+        "visState": {
+          "type": "table",
+          "title": "Stuck Queue Alerts",
+          "params": {
+            "perPage": 10,
+            "showMetricsAtAllLevels": false,
+            "showPartialRows": false,
+            "showTotal": false,
+            "totalFunc": "sum"
+          },
+          "aggs": [
+            {"id": "1", "enabled": true, "type": "count", "schema": "metric", "params": {"customLabel": "Alert Count"}},
+            {"id": "2", "enabled": true, "type": "terms", "schema": "bucket", "params": {"field": "connection_name.keyword", "size": 20, "customLabel": "Connection"}},
+            {"id": "3", "enabled": true, "type": "max", "schema": "metric", "params": {"field": "queuedCount", "customLabel": "Max Queued"}}
+          ]
+        },
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"index\":\"nifi-connection-stats*\",\"query\":{\"query\":\"queue_stuck_alert:true\",\"language\":\"kuery\"},\"filter\":[]}"
+        }
+      }
+    },
+    {
+      "id": "error-bulletins-visualization",
+      "type": "visualization",
+      "attributes": {
+        "title": "Error Bulletins",
+        "visState": {
+          "type": "table",
+          "title": "Error Bulletins",
+          "params": {
+            "perPage": 10,
+            "showMetricsAtAllLevels": false,
+            "showPartialRows": false
+          },
+          "aggs": [
+            {"id": "1", "enabled": true, "type": "count", "schema": "metric", "params": {"customLabel": "Count"}},
+            {"id": "2", "enabled": true, "type": "terms", "schema": "bucket", "params": {"field": "source_name.keyword", "size": 20, "customLabel": "Processor"}},
+            {"id": "3", "enabled": true, "type": "terms", "schema": "bucket", "params": {"field": "bulletin_message.keyword", "size": 5, "customLabel": "Error Message"}}
+          ]
+        },
+        "kibanaSavedObjectMeta": {
+          "searchSourceJSON": "{\"index\":\"nifi-bulletins*\",\"query\":{\"query\":\"bulletin_level:ERROR\",\"language\":\"kuery\"},\"filter\":[]}"
+        }
+      }
+    }
+  ]
+}

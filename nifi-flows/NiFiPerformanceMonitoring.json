@@ -1,0 +1,511 @@
+{
+  "flowContents": {
+    "identifier": "nifi-performance-monitoring-flow",
+    "instanceIdentifier": "perf-monitor-001",
+    "name": "NiFi Performance Monitoring",
+    "comments": "Comprehensive NiFi performance monitoring flow for Elasticsearch and Kibana visualization",
+    "position": {"x": 0.0, "y": 0.0},
+    "processGroups": [
+      {
+        "identifier": "system-diagnostics-group",
+        "name": "System Diagnostics Collection",
+        "comments": "Collects system-level metrics: heap, CPU, threads, GC, uptime",
+        "position": {"x": 0.0, "y": 0.0},
+        "processors": [
+          {
+            "identifier": "invoke-system-diagnostics",
+            "name": "InvokeHTTP - System Diagnostics",
+            "type": "org.apache.nifi.processors.standard.InvokeHTTP",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-standard-nar", "version": "1.23.2"},
+            "properties": {
+              "HTTP Method": "GET",
+              "Remote URL": "http://localhost:8080/nifi-api/system-diagnostics",
+              "Content-Type": "application/json"
+            },
+            "schedulingPeriod": "30 sec",
+            "schedulingStrategy": "TIMER_DRIVEN",
+            "comments": "Fetches system diagnostics from NiFi API including heap, CPU, GC metrics"
+          },
+          {
+            "identifier": "split-system-diagnostics",
+            "name": "EvaluateJsonPath - Extract System Metrics",
+            "type": "org.apache.nifi.processors.standard.EvaluateJsonPath",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-standard-nar", "version": "1.23.2"},
+            "properties": {
+              "Destination": "flowfile-attribute",
+              "heapUsed": "$.systemDiagnostics.aggregateSnapshot.usedHeap",
+              "heapMax": "$.systemDiagnostics.aggregateSnapshot.maxHeap",
+              "heapUtilization": "$.systemDiagnostics.aggregateSnapshot.heapUtilization",
+              "availableProcessors": "$.systemDiagnostics.aggregateSnapshot.availableProcessors",
+              "processorLoadAverage": "$.systemDiagnostics.aggregateSnapshot.processorLoadAverage",
+              "totalThreads": "$.systemDiagnostics.aggregateSnapshot.totalThreads",
+              "daemonThreads": "$.systemDiagnostics.aggregateSnapshot.daemonThreads",
+              "uptime": "$.systemDiagnostics.aggregateSnapshot.uptime",
+              "gcCount": "$.systemDiagnostics.aggregateSnapshot.garbageCollection[0].collectionCount",
+              "gcTime": "$.systemDiagnostics.aggregateSnapshot.garbageCollection[0].collectionTime",
+              "flowFileRepoUsed": "$.systemDiagnostics.aggregateSnapshot.flowFileRepositoryStorageUsage.usedSpace",
+              "flowFileRepoFree": "$.systemDiagnostics.aggregateSnapshot.flowFileRepositoryStorageUsage.freeSpace",
+              "flowFileRepoTotal": "$.systemDiagnostics.aggregateSnapshot.flowFileRepositoryStorageUsage.totalSpace",
+              "contentRepoUsed": "$.systemDiagnostics.aggregateSnapshot.contentRepositoryStorageUsage[0].usedSpace",
+              "contentRepoFree": "$.systemDiagnostics.aggregateSnapshot.contentRepositoryStorageUsage[0].freeSpace",
+              "contentRepoTotal": "$.systemDiagnostics.aggregateSnapshot.contentRepositoryStorageUsage[0].totalSpace",
+              "provenanceRepoUsed": "$.systemDiagnostics.aggregateSnapshot.provenanceRepositoryStorageUsage[0].usedSpace",
+              "provenanceRepoFree": "$.systemDiagnostics.aggregateSnapshot.provenanceRepositoryStorageUsage[0].freeSpace",
+              "provenanceRepoTotal": "$.systemDiagnostics.aggregateSnapshot.provenanceRepositoryStorageUsage[0].totalSpace"
+            },
+            "comments": "Extracts system metrics including heap, CPU, threads, GC, and repository storage"
+          },
+          {
+            "identifier": "add-system-timestamp",
+            "name": "UpdateAttribute - Add Timestamp",
+            "type": "org.apache.nifi.processors.attributes.UpdateAttribute",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-update-attribute-nar", "version": "1.23.2"},
+            "properties": {
+              "@timestamp": "${now():format(\"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'\")}",
+              "metric_type": "system_diagnostics",
+              "nifi_instance": "${hostname()}"
+            },
+            "comments": "Adds timestamp and metadata for Elasticsearch indexing"
+          },
+          {
+            "identifier": "system-to-json",
+            "name": "AttributesToJSON - System Metrics",
+            "type": "org.apache.nifi.processors.standard.AttributesToJSON",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-standard-nar", "version": "1.23.2"},
+            "properties": {
+              "Destination": "flowfile-content",
+              "Attributes List": "@timestamp,metric_type,nifi_instance,heapUsed,heapMax,heapUtilization,availableProcessors,processorLoadAverage,totalThreads,daemonThreads,uptime,gcCount,gcTime,flowFileRepoUsed,flowFileRepoFree,flowFileRepoTotal,contentRepoUsed,contentRepoFree,contentRepoTotal,provenanceRepoUsed,provenanceRepoFree,provenanceRepoTotal",
+              "Include Core Attributes": "false"
+            },
+            "comments": "Converts system metrics attributes to JSON for Elasticsearch"
+          },
+          {
+            "identifier": "put-system-elasticsearch",
+            "name": "PutElasticsearchHttp - System Metrics",
+            "type": "org.apache.nifi.processors.elasticsearch.PutElasticsearchHttp",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-elasticsearch-nar", "version": "1.23.2"},
+            "properties": {
+              "elasticsearch-http-url": "${elasticsearch.url}",
+              "put-es-index": "nifi-system-metrics",
+              "put-es-type": "_doc",
+              "elasticsearch-http-connect-timeout": "5 secs",
+              "elasticsearch-http-response-timeout": "15 secs"
+            },
+            "comments": "Indexes system metrics to Elasticsearch for Kibana visualization"
+          }
+        ]
+      },
+      {
+        "identifier": "processor-stats-group",
+        "name": "Processor Statistics Collection",
+        "comments": "Collects processor-level metrics: errors, transactions, processing time",
+        "position": {"x": 600.0, "y": 0.0},
+        "processors": [
+          {
+            "identifier": "invoke-process-groups",
+            "name": "InvokeHTTP - Process Groups",
+            "type": "org.apache.nifi.processors.standard.InvokeHTTP",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-standard-nar", "version": "1.23.2"},
+            "properties": {
+              "HTTP Method": "GET",
+              "Remote URL": "http://localhost:8080/nifi-api/flow/process-groups/root",
+              "Content-Type": "application/json"
+            },
+            "schedulingPeriod": "30 sec",
+            "schedulingStrategy": "TIMER_DRIVEN",
+            "comments": "Fetches process group flow status including processor statistics"
+          },
+          {
+            "identifier": "split-processors",
+            "name": "SplitJson - Processors",
+            "type": "org.apache.nifi.processors.standard.SplitJson",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-standard-nar", "version": "1.23.2"},
+            "properties": {
+              "JsonPath Expression": "$.processGroupFlow.flow.processors[*]"
+            },
+            "comments": "Splits processor array into individual records"
+          },
+          {
+            "identifier": "extract-processor-stats",
+            "name": "EvaluateJsonPath - Processor Stats",
+            "type": "org.apache.nifi.processors.standard.EvaluateJsonPath",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-standard-nar", "version": "1.23.2"},
+            "properties": {
+              "Destination": "flowfile-attribute",
+              "processor_id": "$.id",
+              "processor_name": "$.component.name",
+              "processor_type": "$.component.type",
+              "processor_state": "$.component.state",
+              "activeThreadCount": "$.status.aggregateSnapshot.activeThreadCount",
+              "bytesIn": "$.status.aggregateSnapshot.bytesIn",
+              "bytesOut": "$.status.aggregateSnapshot.bytesOut",
+              "bytesRead": "$.status.aggregateSnapshot.bytesRead",
+              "bytesWritten": "$.status.aggregateSnapshot.bytesWritten",
+              "flowFilesIn": "$.status.aggregateSnapshot.flowFilesIn",
+              "flowFilesOut": "$.status.aggregateSnapshot.flowFilesOut",
+              "input": "$.status.aggregateSnapshot.input",
+              "output": "$.status.aggregateSnapshot.output",
+              "taskCount": "$.status.aggregateSnapshot.taskCount",
+              "tasksDuration": "$.status.aggregateSnapshot.tasksDuration",
+              "tasksDurationNanos": "$.status.aggregateSnapshot.tasksDurationNanos",
+              "terminatedThreadCount": "$.status.aggregateSnapshot.terminatedThreadCount"
+            },
+            "comments": "Extracts processor-level statistics"
+          },
+          {
+            "identifier": "add-processor-timestamp",
+            "name": "UpdateAttribute - Add Processor Timestamp",
+            "type": "org.apache.nifi.processors.attributes.UpdateAttribute",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-update-attribute-nar", "version": "1.23.2"},
+            "properties": {
+              "@timestamp": "${now():format(\"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'\")}",
+              "metric_type": "processor_stats",
+              "nifi_instance": "${hostname()}"
+            },
+            "comments": "Adds timestamp and metadata for processor stats"
+          },
+          {
+            "identifier": "processor-to-json",
+            "name": "AttributesToJSON - Processor Stats",
+            "type": "org.apache.nifi.processors.standard.AttributesToJSON",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-standard-nar", "version": "1.23.2"},
+            "properties": {
+              "Destination": "flowfile-content",
+              "Attributes List": "@timestamp,metric_type,nifi_instance,processor_id,processor_name,processor_type,processor_state,activeThreadCount,bytesIn,bytesOut,bytesRead,bytesWritten,flowFilesIn,flowFilesOut,input,output,taskCount,tasksDuration,tasksDurationNanos,terminatedThreadCount",
+              "Include Core Attributes": "false"
+            },
+            "comments": "Converts processor stats to JSON"
+          },
+          {
+            "identifier": "put-processor-elasticsearch",
+            "name": "PutElasticsearchHttp - Processor Stats",
+            "type": "org.apache.nifi.processors.elasticsearch.PutElasticsearchHttp",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-elasticsearch-nar", "version": "1.23.2"},
+            "properties": {
+              "elasticsearch-http-url": "${elasticsearch.url}",
+              "put-es-index": "nifi-processor-stats",
+              "put-es-type": "_doc"
+            },
+            "comments": "Indexes processor stats to Elasticsearch"
+          }
+        ]
+      },
+      {
+        "identifier": "connection-stats-group",
+        "name": "Connection/Queue Statistics Collection",
+        "comments": "Collects connection and queue metrics for stuck queue detection",
+        "position": {"x": 1200.0, "y": 0.0},
+        "processors": [
+          {
+            "identifier": "invoke-connections",
+            "name": "InvokeHTTP - Connections",
+            "type": "org.apache.nifi.processors.standard.InvokeHTTP",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-standard-nar", "version": "1.23.2"},
+            "properties": {
+              "HTTP Method": "GET",
+              "Remote URL": "http://localhost:8080/nifi-api/flow/process-groups/root",
+              "Content-Type": "application/json"
+            },
+            "schedulingPeriod": "30 sec",
+            "schedulingStrategy": "TIMER_DRIVEN",
+            "comments": "Fetches connection/queue statistics"
+          },
+          {
+            "identifier": "split-connections",
+            "name": "SplitJson - Connections",
+            "type": "org.apache.nifi.processors.standard.SplitJson",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-standard-nar", "version": "1.23.2"},
+            "properties": {
+              "JsonPath Expression": "$.processGroupFlow.flow.connections[*]"
+            },
+            "comments": "Splits connection array into individual records"
+          },
+          {
+            "identifier": "extract-connection-stats",
+            "name": "EvaluateJsonPath - Connection Stats",
+            "type": "org.apache.nifi.processors.standard.EvaluateJsonPath",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-standard-nar", "version": "1.23.2"},
+            "properties": {
+              "Destination": "flowfile-attribute",
+              "connection_id": "$.id",
+              "connection_name": "$.component.name",
+              "source_name": "$.component.source.name",
+              "destination_name": "$.component.destination.name",
+              "queuedCount": "$.status.aggregateSnapshot.queuedCount",
+              "queuedSize": "$.status.aggregateSnapshot.queuedSize",
+              "queued": "$.status.aggregateSnapshot.queued",
+              "percentUseCount": "$.status.aggregateSnapshot.percentUseCount",
+              "percentUseBytes": "$.status.aggregateSnapshot.percentUseBytes",
+              "flowFilesIn": "$.status.aggregateSnapshot.flowFilesIn",
+              "flowFilesOut": "$.status.aggregateSnapshot.flowFilesOut",
+              "bytesIn": "$.status.aggregateSnapshot.bytesIn",
+              "bytesOut": "$.status.aggregateSnapshot.bytesOut"
+            },
+            "comments": "Extracts connection and queue statistics"
+          },
+          {
+            "identifier": "add-connection-timestamp",
+            "name": "UpdateAttribute - Add Connection Timestamp",
+            "type": "org.apache.nifi.processors.attributes.UpdateAttribute",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-update-attribute-nar", "version": "1.23.2"},
+            "properties": {
+              "@timestamp": "${now():format(\"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'\")}",
+              "metric_type": "connection_stats",
+              "nifi_instance": "${hostname()}",
+              "queue_stuck_alert": "${queuedCount:gt(10000):and(${flowFilesOut:equals(0)})}"
+            },
+            "comments": "Adds timestamp and stuck queue alert flag"
+          },
+          {
+            "identifier": "connection-to-json",
+            "name": "AttributesToJSON - Connection Stats",
+            "type": "org.apache.nifi.processors.standard.AttributesToJSON",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-standard-nar", "version": "1.23.2"},
+            "properties": {
+              "Destination": "flowfile-content",
+              "Attributes List": "@timestamp,metric_type,nifi_instance,connection_id,connection_name,source_name,destination_name,queuedCount,queuedSize,queued,percentUseCount,percentUseBytes,flowFilesIn,flowFilesOut,bytesIn,bytesOut,queue_stuck_alert",
+              "Include Core Attributes": "false"
+            },
+            "comments": "Converts connection stats to JSON"
+          },
+          {
+            "identifier": "put-connection-elasticsearch",
+            "name": "PutElasticsearchHttp - Connection Stats",
+            "type": "org.apache.nifi.processors.elasticsearch.PutElasticsearchHttp",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-elasticsearch-nar", "version": "1.23.2"},
+            "properties": {
+              "elasticsearch-http-url": "${elasticsearch.url}",
+              "put-es-index": "nifi-connection-stats",
+              "put-es-type": "_doc"
+            },
+            "comments": "Indexes connection stats to Elasticsearch"
+          }
+        ]
+      },
+      {
+        "identifier": "bulletin-group",
+        "name": "Bulletin/Error Collection",
+        "comments": "Collects bulletins and errors for error trend analysis",
+        "position": {"x": 0.0, "y": 400.0},
+        "processors": [
+          {
+            "identifier": "invoke-bulletins",
+            "name": "InvokeHTTP - Bulletins",
+            "type": "org.apache.nifi.processors.standard.InvokeHTTP",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-standard-nar", "version": "1.23.2"},
+            "properties": {
+              "HTTP Method": "GET",
+              "Remote URL": "http://localhost:8080/nifi-api/flow/bulletin-board",
+              "Content-Type": "application/json"
+            },
+            "schedulingPeriod": "15 sec",
+            "schedulingStrategy": "TIMER_DRIVEN",
+            "comments": "Fetches bulletins (errors, warnings) from NiFi"
+          },
+          {
+            "identifier": "split-bulletins",
+            "name": "SplitJson - Bulletins",
+            "type": "org.apache.nifi.processors.standard.SplitJson",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-standard-nar", "version": "1.23.2"},
+            "properties": {
+              "JsonPath Expression": "$.bulletinBoard.bulletins[*]"
+            },
+            "comments": "Splits bulletin array into individual records"
+          },
+          {
+            "identifier": "extract-bulletin-details",
+            "name": "EvaluateJsonPath - Bulletin Details",
+            "type": "org.apache.nifi.processors.standard.EvaluateJsonPath",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-standard-nar", "version": "1.23.2"},
+            "properties": {
+              "Destination": "flowfile-attribute",
+              "bulletin_id": "$.id",
+              "bulletin_category": "$.bulletin.category",
+              "bulletin_level": "$.bulletin.level",
+              "bulletin_message": "$.bulletin.message",
+              "bulletin_timestamp": "$.bulletin.timestamp",
+              "source_id": "$.bulletin.sourceId",
+              "source_name": "$.bulletin.sourceName",
+              "source_type": "$.bulletin.sourceType",
+              "group_id": "$.bulletin.groupId",
+              "group_name": "$.bulletin.groupName"
+            },
+            "comments": "Extracts bulletin details for error tracking"
+          },
+          {
+            "identifier": "add-bulletin-metadata",
+            "name": "UpdateAttribute - Bulletin Metadata",
+            "type": "org.apache.nifi.processors.attributes.UpdateAttribute",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-update-attribute-nar", "version": "1.23.2"},
+            "properties": {
+              "@timestamp": "${now():format(\"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'\")}",
+              "metric_type": "bulletin",
+              "nifi_instance": "${hostname()}",
+              "is_error": "${bulletin_level:equals('ERROR')}"
+            },
+            "comments": "Adds metadata for bulletin classification"
+          },
+          {
+            "identifier": "bulletin-to-json",
+            "name": "AttributesToJSON - Bulletin",
+            "type": "org.apache.nifi.processors.standard.AttributesToJSON",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-standard-nar", "version": "1.23.2"},
+            "properties": {
+              "Destination": "flowfile-content",
+              "Attributes List": "@timestamp,metric_type,nifi_instance,bulletin_id,bulletin_category,bulletin_level,bulletin_message,bulletin_timestamp,source_id,source_name,source_type,group_id,group_name,is_error",
+              "Include Core Attributes": "false"
+            },
+            "comments": "Converts bulletin to JSON"
+          },
+          {
+            "identifier": "put-bulletin-elasticsearch",
+            "name": "PutElasticsearchHttp - Bulletins",
+            "type": "org.apache.nifi.processors.elasticsearch.PutElasticsearchHttp",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-elasticsearch-nar", "version": "1.23.2"},
+            "properties": {
+              "elasticsearch-http-url": "${elasticsearch.url}",
+              "put-es-index": "nifi-bulletins",
+              "put-es-type": "_doc"
+            },
+            "comments": "Indexes bulletins to Elasticsearch for error trend analysis"
+          }
+        ]
+      },
+      {
+        "identifier": "counters-group",
+        "name": "Counters Collection",
+        "comments": "Collects NiFi counters for transaction tracking",
+        "position": {"x": 600.0, "y": 400.0},
+        "processors": [
+          {
+            "identifier": "invoke-counters",
+            "name": "InvokeHTTP - Counters",
+            "type": "org.apache.nifi.processors.standard.InvokeHTTP",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-standard-nar", "version": "1.23.2"},
+            "properties": {
+              "HTTP Method": "GET",
+              "Remote URL": "http://localhost:8080/nifi-api/counters",
+              "Content-Type": "application/json"
+            },
+            "schedulingPeriod": "30 sec",
+            "schedulingStrategy": "TIMER_DRIVEN",
+            "comments": "Fetches counters for transaction tracking"
+          },
+          {
+            "identifier": "split-counters",
+            "name": "SplitJson - Counters",
+            "type": "org.apache.nifi.processors.standard.SplitJson",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-standard-nar", "version": "1.23.2"},
+            "properties": {
+              "JsonPath Expression": "$.counters.aggregateSnapshot.counters[*]"
+            },
+            "comments": "Splits counter array into individual records"
+          },
+          {
+            "identifier": "extract-counter-details",
+            "name": "EvaluateJsonPath - Counter Details",
+            "type": "org.apache.nifi.processors.standard.EvaluateJsonPath",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-standard-nar", "version": "1.23.2"},
+            "properties": {
+              "Destination": "flowfile-attribute",
+              "counter_id": "$.id",
+              "counter_context": "$.context",
+              "counter_name": "$.name",
+              "counter_value": "$.valueCount"
+            },
+            "comments": "Extracts counter details"
+          },
+          {
+            "identifier": "add-counter-timestamp",
+            "name": "UpdateAttribute - Counter Timestamp",
+            "type": "org.apache.nifi.processors.attributes.UpdateAttribute",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-update-attribute-nar", "version": "1.23.2"},
+            "properties": {
+              "@timestamp": "${now():format(\"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'\")}",
+              "metric_type": "counter",
+              "nifi_instance": "${hostname()}"
+            },
+            "comments": "Adds timestamp for counter metrics"
+          },
+          {
+            "identifier": "counter-to-json",
+            "name": "AttributesToJSON - Counter",
+            "type": "org.apache.nifi.processors.standard.AttributesToJSON",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-standard-nar", "version": "1.23.2"},
+            "properties": {
+              "Destination": "flowfile-content",
+              "Attributes List": "@timestamp,metric_type,nifi_instance,counter_id,counter_context,counter_name,counter_value",
+              "Include Core Attributes": "false"
+            },
+            "comments": "Converts counter to JSON"
+          },
+          {
+            "identifier": "put-counter-elasticsearch",
+            "name": "PutElasticsearchHttp - Counters",
+            "type": "org.apache.nifi.processors.elasticsearch.PutElasticsearchHttp",
+            "bundle": {"group": "org.apache.nifi", "artifact": "nifi-elasticsearch-nar", "version": "1.23.2"},
+            "properties": {
+              "elasticsearch-http-url": "${elasticsearch.url}",
+              "put-es-index": "nifi-counters",
+              "put-es-type": "_doc"
+            },
+            "comments": "Indexes counters to Elasticsearch for transaction tracking"
+          }
+        ]
+      }
+    ],
+    "remoteProcessGroups": [],
+    "processors": [],
+    "inputPorts": [],
+    "outputPorts": [],
+    "connections": [],
+    "labels": [
+      {
+        "identifier": "main-label",
+        "label": "NiFi Performance Monitoring Suite\n\nThis flow collects comprehensive performance metrics from NiFi and indexes them to Elasticsearch for Kibana visualization.\n\nMetrics collected:\n- System Diagnostics: Heap, CPU, Threads, GC, Uptime\n- Processor Stats: Errors, Transactions, Processing Time\n- Connection Stats: Queue depth, Stuck queue detection\n- Bulletins: Errors, Warnings for trend analysis\n- Counters: Transaction counts\n- Repository Storage: FlowFile, Content, Provenance disk usage",
+        "position": {"x": -400.0, "y": -200.0},
+        "width": 500.0,
+        "height": 300.0,
+        "style": {"font-size": "14px"}
+      }
+    ],
+    "funnels": [],
+    "controllerServices": [],
+    "variables": {
+      "elasticsearch.url": "https://your-elasticsearch-cloud.elastic-cloud.com:9243"
+    },
+    "parameterContexts": {
+      "nifi-monitoring-params": {
+        "name": "NiFi Monitoring Parameters",
+        "parameters": [
+          {
+            "name": "elasticsearch.url",
+            "description": "Elasticsearch Cloud URL",
+            "value": "https://your-elasticsearch-cloud.elastic-cloud.com:9243"
+          },
+          {
+            "name": "elasticsearch.username",
+            "description": "Elasticsearch username",
+            "sensitive": true
+          },
+          {
+            "name": "elasticsearch.password",
+            "description": "Elasticsearch password",
+            "sensitive": true
+          },
+          {
+            "name": "nifi.api.url",
+            "description": "NiFi API base URL",
+            "value": "http://localhost:8080/nifi-api"
+          },
+          {
+            "name": "collection.interval",
+            "description": "Metrics collection interval",
+            "value": "30 sec"
+          }
+        ]
+      }
+    },
+    "flowEncodingVersion": "1.0"
+  }
+}
