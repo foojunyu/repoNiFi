@@ -47,11 +47,17 @@ log_info "Elasticsearch URL: ${ES_URL}"
 
 # Test connection
 log_info "Testing Elasticsearch connection..."
-if ! curl -s ${AUTH} "${ES_URL}/_cluster/health" > /dev/null; then
+ES_RESPONSE=$(curl -s -w "\n%{http_code}" ${AUTH} "${ES_URL}/_cluster/health" 2>&1)
+ES_HTTP_CODE=$(echo "$ES_RESPONSE" | tail -n1)
+ES_BODY=$(echo "$ES_RESPONSE" | sed '$d')
+
+if [ "$ES_HTTP_CODE" != "200" ]; then
     log_error "Cannot connect to Elasticsearch at ${ES_URL}"
+    log_error "HTTP Status: ${ES_HTTP_CODE}"
+    log_error "Response: ${ES_BODY}"
     exit 1
 fi
-log_info "Elasticsearch connection successful"
+log_info "Elasticsearch connection successful (cluster status: $(echo "$ES_BODY" | grep -o '"status":"[^"]*"' | cut -d'"' -f4))"
 
 # Create ILM Policy
 log_info "Creating ILM policy: nifi-metrics-policy"

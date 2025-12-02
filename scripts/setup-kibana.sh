@@ -50,8 +50,14 @@ log_info "Kibana URL: ${KIBANA_URL}"
 
 # Test connection
 log_info "Testing Kibana connection..."
-if ! curl -s ${AUTH} "${KIBANA_URL}/api/status" > /dev/null; then
+KIBANA_RESPONSE=$(curl -s -w "\n%{http_code}" ${AUTH} "${KIBANA_URL}/api/status" 2>&1)
+KIBANA_HTTP_CODE=$(echo "$KIBANA_RESPONSE" | tail -n1)
+KIBANA_BODY=$(echo "$KIBANA_RESPONSE" | sed '$d')
+
+if [ "$KIBANA_HTTP_CODE" != "200" ]; then
     log_error "Cannot connect to Kibana at ${KIBANA_URL}"
+    log_error "HTTP Status: ${KIBANA_HTTP_CODE}"
+    log_error "Response: ${KIBANA_BODY}"
     exit 1
 fi
 log_info "Kibana connection successful"
