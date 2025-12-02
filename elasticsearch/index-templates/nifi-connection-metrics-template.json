@@ -1,0 +1,78 @@
+{
+  "index_patterns": ["nifi-connection-metrics-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 1,
+      "index.refresh_interval": "30s",
+      "index.lifecycle.name": "nifi-metrics-ilm-policy",
+      "index.lifecycle.rollover_alias": "nifi-connection-metrics"
+    },
+    "mappings": {
+      "properties": {
+        "@timestamp": {
+          "type": "date"
+        },
+        "cluster": {
+          "properties": {
+            "id": { "type": "keyword" },
+            "name": { "type": "keyword" },
+            "nodeId": { "type": "keyword" }
+          }
+        },
+        "processGroup": {
+          "properties": {
+            "id": { "type": "keyword" },
+            "name": { "type": "keyword" }
+          }
+        },
+        "connection": {
+          "properties": {
+            "id": { "type": "keyword" },
+            "name": { "type": "keyword" },
+            "sourceId": { "type": "keyword" },
+            "sourceName": { "type": "keyword" },
+            "sourceType": { "type": "keyword" },
+            "destinationId": { "type": "keyword" },
+            "destinationName": { "type": "keyword" },
+            "destinationType": { "type": "keyword" },
+            "selectedRelationships": { "type": "keyword" }
+          }
+        },
+        "queue": {
+          "properties": {
+            "queuedCount": { "type": "long" },
+            "queuedSize": { "type": "long" },
+            "backPressureObjectThreshold": { "type": "long" },
+            "backPressureBytesThreshold": { "type": "long" },
+            "backPressurePercentCount": { "type": "float" },
+            "backPressurePercentSize": { "type": "float" },
+            "isBackPressured": { "type": "boolean" }
+          }
+        },
+        "stats": {
+          "properties": {
+            "flowFilesIn": { "type": "long" },
+            "flowFilesOut": { "type": "long" },
+            "bytesIn": { "type": "long" },
+            "bytesOut": { "type": "long" }
+          }
+        },
+        "stuckIndicator": {
+          "properties": {
+            "isStuck": { "type": "boolean" },
+            "stuckDuration": { "type": "long" },
+            "previousQueuedCount": { "type": "long" }
+          }
+        }
+      }
+    }
+  },
+  "priority": 100,
+  "composed_of": [],
+  "version": 1,
+  "_meta": {
+    "description": "Index template for NiFi connection/queue metrics",
+    "created_by": "NiFi Monitoring Solution"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "name": "NiFi Disk Usage Critical Alert",
+  "consumer": "alerts",
+  "alertTypeId": ".es-query",
+  "schedule": {
+    "interval": "5m"
+  },
+  "enabled": true,
+  "tags": ["nifi", "disk", "storage", "critical"],
+  "throttle": "30m",
+  "notifyWhen": "onActiveAlert",
+  "params": {
+    "index": ["nifi-storage-metrics-*"],
+    "timeField": "@timestamp",
+    "timeWindowSize": 10,
+    "timeWindowUnit": "m",
+    "threshold": [90],
+    "thresholdComparator": ">=",
+    "size": 100,
+    "esQuery": "{\n  \"query\": {\n    \"bool\": {\n      \"should\": [\n        {\n          \"range\": {\n            \"flowfileRepository.usedSpacePercent\": {\n              \"gte\": 90\n            }\n          }\n        },\n        {\n          \"range\": {\n            \"contentRepository.usedSpacePercent\": {\n              \"gte\": 90\n            }\n          }\n        },\n        {\n          \"range\": {\n            \"provenanceRepository.usedSpacePercent\": {\n              \"gte\": 90\n            }\n          }\n        }\n      ],\n      \"minimum_should_match\": 1,\n      \"filter\": [\n        {\n          \"range\": {\n            \"@timestamp\": {\n              \"gte\": \"now-10m\"\n            }\n          }\n        }\n      ]\n    }\n  }\n}",
+    "excludeHitsFromPreviousRun": false,
+    "aggType": "max",
+    "aggField": "usedSpacePercent",
+    "groupBy": "all"
+  },
+  "actions": [],
+  "_meta": {
+    "description": "Alert when any repository (FlowFile, Content, or Provenance) disk usage exceeds 90%. Critical threshold that may cause NiFi to stop accepting data.",
+    "severity": "critical",
+    "response": "1. Check which repository is full\n2. Clear old data if possible\n3. Add additional storage\n4. Review provenance retention settings\n5. Check for stuck flows causing data accumulation"
+  }
+}

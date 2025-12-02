@@ -1,0 +1,101 @@
+{
+  "index_patterns": ["nifi-system-metrics-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 1,
+      "index.refresh_interval": "30s",
+      "index.lifecycle.name": "nifi-metrics-ilm-policy",
+      "index.lifecycle.rollover_alias": "nifi-system-metrics"
+    },
+    "mappings": {
+      "properties": {
+        "@timestamp": {
+          "type": "date"
+        },
+        "cluster": {
+          "properties": {
+            "id": { "type": "keyword" },
+            "name": { "type": "keyword" },
+            "nodeId": { "type": "keyword" },
+            "nodeAddress": { "type": "keyword" }
+          }
+        },
+        "jvm": {
+          "properties": {
+            "heap": {
+              "properties": {
+                "used": { "type": "long" },
+                "max": { "type": "long" },
+                "free": { "type": "long" },
+                "usedPercent": { "type": "float" },
+                "freePercent": { "type": "float" },
+                "totalNonHeap": { "type": "long" },
+                "usedNonHeap": { "type": "long" },
+                "freeNonHeap": { "type": "long" }
+              }
+            },
+            "gc": {
+              "properties": {
+                "g1Young": {
+                  "properties": {
+                    "collectionCount": { "type": "long" },
+                    "collectionTime": { "type": "long" },
+                    "collectionTimePercentage": { "type": "float" }
+                  }
+                },
+                "g1Old": {
+                  "properties": {
+                    "collectionCount": { "type": "long" },
+                    "collectionTime": { "type": "long" },
+                    "collectionTimePercentage": { "type": "float" }
+                  }
+                },
+                "totalCollectionCount": { "type": "long" },
+                "totalCollectionTime": { "type": "long" }
+              }
+            },
+            "uptime": { "type": "long" },
+            "daemonThreadCount": { "type": "integer" },
+            "totalThreadCount": { "type": "integer" },
+            "peakThreadCount": { "type": "integer" }
+          }
+        },
+        "system": {
+          "properties": {
+            "cpu": {
+              "properties": {
+                "availableProcessors": { "type": "integer" },
+                "loadAverage": { "type": "float" },
+                "processorLoadAverage": { "type": "float" },
+                "systemLoad": { "type": "float" }
+              }
+            }
+          }
+        },
+        "flow": {
+          "properties": {
+            "activeThreadCount": { "type": "integer" },
+            "terminatedThreadCount": { "type": "integer" },
+            "queued": { "type": "long" },
+            "queuedCount": { "type": "long" },
+            "queuedContentSize": { "type": "long" },
+            "bytesRead": { "type": "long" },
+            "bytesWritten": { "type": "long" },
+            "bytesReceived": { "type": "long" },
+            "bytesSent": { "type": "long" },
+            "flowFilesReceived": { "type": "long" },
+            "flowFilesSent": { "type": "long" }
+          }
+        }
+      }
+    }
+  },
+  "priority": 100,
+  "composed_of": [],
+  "version": 1,
+  "_meta": {
+    "description": "Index template for NiFi system metrics",
+    "created_by": "NiFi Monitoring Solution"
+  }
+}

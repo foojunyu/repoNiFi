@@ -1,0 +1,32 @@
+{
+  "name": "NiFi Heap Usage Warning",
+  "consumer": "alerts",
+  "alertTypeId": ".es-query",
+  "schedule": {
+    "interval": "1m"
+  },
+  "enabled": true,
+  "tags": ["nifi", "heap", "memory", "warning"],
+  "throttle": "15m",
+  "notifyWhen": "onActiveAlert",
+  "params": {
+    "index": ["nifi-system-metrics-*"],
+    "timeField": "@timestamp",
+    "timeWindowSize": 5,
+    "timeWindowUnit": "m",
+    "threshold": [85],
+    "thresholdComparator": ">=",
+    "size": 100,
+    "esQuery": "{\n  \"query\": {\n    \"bool\": {\n      \"must\": [\n        {\n          \"range\": {\n            \"jvm.heap.usedPercent\": {\n              \"gte\": 85\n            }\n          }\n        }\n      ],\n      \"filter\": [\n        {\n          \"range\": {\n            \"@timestamp\": {\n              \"gte\": \"now-5m\"\n            }\n          }\n        }\n      ]\n    }\n  }\n}",
+    "excludeHitsFromPreviousRun": false,
+    "aggType": "max",
+    "aggField": "jvm.heap.usedPercent",
+    "groupBy": "all"
+  },
+  "actions": [],
+  "_meta": {
+    "description": "Alert when heap utilization exceeds 85%. High heap usage can lead to increased GC activity, slower processing, and potential OutOfMemory errors.",
+    "severity": "warning",
+    "response": "1. Monitor GC activity\n2. Identify memory-heavy processors\n3. Consider increasing heap size (Xmx)\n4. Review and optimize flow design"
+  }
+}

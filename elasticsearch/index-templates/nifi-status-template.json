@@ -1,0 +1,129 @@
+{
+  "index_patterns": ["nifi-status-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 1,
+      "index.refresh_interval": "30s",
+      "index.lifecycle.name": "nifi-metrics-ilm-policy",
+      "index.lifecycle.rollover_alias": "nifi-status"
+    },
+    "mappings": {
+      "properties": {
+        "@timestamp": {
+          "type": "date"
+        },
+        "platform": {
+          "type": "keyword"
+        },
+        "instanceId": {
+          "type": "keyword"
+        },
+        "application": {
+          "type": "keyword"
+        },
+        "componentType": {
+          "type": "keyword"
+        },
+        "componentId": {
+          "type": "keyword"
+        },
+        "componentName": {
+          "type": "keyword"
+        },
+        "parentId": {
+          "type": "keyword"
+        },
+        "processGroupId": {
+          "type": "keyword"
+        },
+        "processGroupName": {
+          "type": "keyword"
+        },
+        "status": {
+          "properties": {
+            "runStatus": { "type": "keyword" },
+            "executionNode": { "type": "keyword" }
+          }
+        },
+        "bytesReceived": { "type": "long" },
+        "bytesSent": { "type": "long" },
+        "bytesRead": { "type": "long" },
+        "bytesWritten": { "type": "long" },
+        "bytesTransferred": { "type": "long" },
+        "flowFilesReceived": { "type": "long" },
+        "flowFilesSent": { "type": "long" },
+        "flowFilesIn": { "type": "long" },
+        "flowFilesOut": { "type": "long" },
+        "flowFilesRemoved": { "type": "long" },
+        "flowFilesQueued": { "type": "long" },
+        "flowFilesTransferred": { "type": "long" },
+        "queuedBytes": { "type": "long" },
+        "queuedCount": { "type": "long" },
+        "activeThreadCount": { "type": "integer" },
+        "terminatedThreadCount": { "type": "integer" },
+        "invocations": { "type": "long" },
+        "processingNanos": { "type": "long" },
+        "averageLineageDuration": { "type": "long" },
+        "input": {
+          "properties": {
+            "bytes": { "type": "long" },
+            "count": { "type": "long" }
+          }
+        },
+        "output": {
+          "properties": {
+            "bytes": { "type": "long" },
+            "count": { "type": "long" }
+          }
+        },
+        "queued": {
+          "properties": {
+            "bytes": { "type": "long" },
+            "count": { "type": "long" }
+          }
+        },
+        "read": {
+          "properties": {
+            "bytes": { "type": "long" },
+            "count": { "type": "long" }
+          }
+        },
+        "written": {
+          "properties": {
+            "bytes": { "type": "long" },
+            "count": { "type": "long" }
+          }
+        },
+        "received": {
+          "properties": {
+            "bytes": { "type": "long" },
+            "count": { "type": "long" }
+          }
+        },
+        "sent": {
+          "properties": {
+            "bytes": { "type": "long" },
+            "count": { "type": "long" }
+          }
+        },
+        "backPressureDataSizeThreshold": { "type": "keyword" },
+        "backPressureObjectThreshold": { "type": "long" },
+        "isBackPressureEnabled": { "type": "boolean" },
+        "percentUseCount": { "type": "float" },
+        "percentUseBytes": { "type": "float" },
+        "sourceId": { "type": "keyword" },
+        "sourceName": { "type": "keyword" },
+        "destinationId": { "type": "keyword" },
+        "destinationName": { "type": "keyword" }
+      }
+    }
+  },
+  "priority": 100,
+  "composed_of": [],
+  "version": 1,
+  "_meta": {
+    "description": "Index template for NiFi status metrics from SiteToSiteStatusReportingTask",
+    "created_by": "NiFi ReportingTask Monitoring Solution"
+  }
+}
